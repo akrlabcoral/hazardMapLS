@@ -1,21 +1,36 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Map Legend — positioned top-right, shows layer symbology + intensity color scale
 // Uses glassmorphism panel with premium dark GIS styling
 export default function MapLegend() {
+  const [isVisible, setIsVisible] = useState(true);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5, delay: 0.3 }}
-      className="absolute top-24 right-6 pointer-events-auto bg-slate-900/85 backdrop-blur-xl border border-slate-700/60 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] z-20 text-xs w-64"
-    >
-      {/* Header with neon accent */}
-      <h3 className="font-bold text-slate-200 uppercase tracking-[0.15em] mb-3 pb-2 border-b border-slate-700/50 text-[11px]"
-          style={{ textShadow: '0 0 10px rgba(6,182,212,0.3)' }}>
-        MAP LEGEND
-      </h3>
+    <div className="absolute top-24 right-6 z-20 flex flex-col items-end gap-2 pointer-events-auto">
+      <button 
+        onClick={() => setIsVisible(!isVisible)}
+        className="p-2 bg-slate-900/80 hover:bg-slate-800 backdrop-blur-md border border-slate-700/60 rounded-full text-slate-400 hover:text-cyan-400 transition-colors shadow-lg flex items-center justify-center"
+        title={isVisible ? "Hide Legend" : "Show Legend"}
+      >
+        {isVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="bg-slate-900/85 backdrop-blur-xl border border-slate-700/60 p-4 rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] text-xs w-64"
+          >
+            {/* Header with neon accent */}
+            <h3 className="font-bold text-slate-200 uppercase tracking-[0.15em] mb-3 pb-2 border-b border-slate-700/50 text-[11px]"
+                style={{ textShadow: '0 0 10px rgba(6,182,212,0.3)' }}>
+              MAP LEGEND
+            </h3>
       <div className="space-y-2.5">
         {/* Layer symbology items with glowing dot indicators */}
         <div className="flex items-center gap-2.5">
@@ -52,6 +67,9 @@ export default function MapLegend() {
           </div>
         </div>
       </div>
-    </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

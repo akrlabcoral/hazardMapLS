@@ -8,16 +8,18 @@ import ControlPanel from '../components/ControlPanel';
 import { ShieldAlert, Crosshair, RefreshCw, Eye, EyeOff, Building2, Play, Activity } from 'lucide-react';
 import useStore from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import RasterLayersPanel from '../components/RasterLayersPanel';
+const RasterLayersPanel = React.lazy(() => import('../components/RasterLayersPanel'));
 import UploadProgressManager from '../components/UploadProgressManager';
 import { useSocket }     from '../hooks/useSocket';
 import { useSimulation } from '../hooks/useSimulation';
-import { simulationFeedService } from '../services/simulationFeedService';
-import MLSimulationPanel from '../components/MLSimulationPanel';
+import { liveFeedService } from '../services/liveFeedService';
+const MLSimulationPanel = React.lazy(() => import('../components/MLSimulationPanel'));
 
 export default function Dashboard() {
   const isSidebarOpen = useStore((state) => state.isSidebarOpen);
   const activeSection = useStore((state) => state.activeSection);
+  const sidebarWidth = useStore((state) => state.sidebarWidth);
+  const isDraggingSidebar = useStore((state) => state.isDraggingSidebar);
   
   const earthquakeEpicenter = useStore((state) => state.earthquakeEpicenter);
   const setEarthquakeEpicenter = useStore((state) => state.setEarthquakeEpicenter);
@@ -25,8 +27,6 @@ export default function Dashboard() {
   const setEarthquakeMagnitude = useStore((state) => state.setEarthquakeMagnitude);
   const earthquakeDepth = useStore((state) => state.earthquakeDepth);
   const setEarthquakeDepth = useStore((state) => state.setEarthquakeDepth);
-  const aftershocksEnabled = useStore((state) => state.aftershocksEnabled);
-  const toggleAftershocks = useStore((state) => state.toggleAftershocks);
   const simulationResults = useStore((state) => state.simulationResults);
   const isSimulationRunning = useStore((state) => state.isSimulationRunning);
   const setSimulationResults = useStore((state) => state.setSimulationResults);
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const setFeedActive = useStore((state) => state.setFeedActive);
   const processedPointsCount = useStore((state) => state.processedPointsCount);
   const liveEarthquakes = useStore((state) => state.liveEarthquakes);
+  const lastDetectedEarthquake = useStore((state) => state.lastDetectedEarthquake);
   const [feedIntervalMs, setFeedIntervalMs] = useState(2000);
 
   // ── Real-time WebSocket connection ──────────────────────────────────────────
@@ -51,11 +52,11 @@ export default function Dashboard() {
   // ── Live Feed Toggle ────────────────────────────────────────────────────────
   const handleToggleFeed = () => {
     if (isFeedActive) {
-      simulationFeedService.stopStream();
+      liveFeedService.stopStream();
       setFeedActive(false);
     } else {
       useStore.getState().clearLiveEarthquakes();
-      simulationFeedService.startStream(feedIntervalMs);
+      liveFeedService.startStream(feedIntervalMs);
       setFeedActive(true);
     }
   };
@@ -67,6 +68,10 @@ export default function Dashboard() {
     clearLiveEarthquakes();
     setSimulationResults(null);
     setEarthquakeEpicenter(null);
+    useStore.getState().setIsSimulationRunning(false);
+    useStore.getState().setMlSimulationData(null);
+    useStore.getState().setMlHeatmapVisible(false);
+    useStore.getState().setMlContoursVisible(false);
   };
 
   // ── Layer & Raster State (used by control panels below) ───────────────────────
@@ -96,30 +101,10 @@ export default function Dashboard() {
         <motion.div 
           className="absolute inset-0 pointer-events-none z-10 flex flex-col justify-between p-6"
           initial={{ left: 0 }}
-          animate={{ left: isSidebarOpen ? 288 : 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          animate={{ left: isSidebarOpen ? sidebarWidth : 0 }}
+          transition={isDraggingSidebar ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
         >
-          {/* Top Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pointer-events-none [&>*]:pointer-events-auto">
-            <StatusCard 
-              title="Active Threats" 
-              value={earthquakeEpicenter ? "1" : "0"} 
-              icon={ShieldAlert} 
-              alert={!!earthquakeEpicenter} 
-              trend={earthquakeEpicenter ? "Earthquake" : ""} 
-            />
-            <StatusCard 
-              title="Impact Radius" 
-              value={stats ? `${stats.radii.severe.toFixed(1)} km` : "--"} 
-              icon={Crosshair} 
-            />
-            <StatusCard 
-              title="Damaged Infrastructure" 
-              value={stats ? `${stats.buildings.destroyed + stats.buildings.majorDamage}` : "--"} 
-              icon={Building2}
-              alert={stats && (stats.buildings.destroyed + stats.buildings.majorDamage) > 0}
-            />
-          </div>
+
 
           {/* Bottom Control Panels */}
           <div className="mt-auto flex gap-4 pointer-events-none items-end [&>*]:pointer-events-auto">
@@ -173,35 +158,6 @@ export default function Dashboard() {
                         )}
                       </div>
 
-                      {/* Simulation summary if results exist */}
-                      {stats && (
-                        <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                          <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Latest Simulation</div>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Severe Zone</span>
-                              <span className="text-red-400 font-mono">{stats.radii.severe.toFixed(1)} km</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Moderate Zone</span>
-                              <span className="text-orange-400 font-mono">{stats.radii.moderate.toFixed(1)} km</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Buildings Hit</span>
-                              <span className="text-red-400 font-mono">{stats.buildings.destroyed + stats.buildings.majorDamage}/{stats.buildings.total}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-slate-500">Roads Blocked</span>
-                              <span className="text-red-400 font-mono">{stats.roads.blocked}/{stats.roads.total}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {activeSection === 'simulation' && (
-                    <div className="space-y-3">
                       {/* Magnitude Slider */}
                       <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                         <div className="flex justify-between items-center mb-3">
@@ -238,17 +194,6 @@ export default function Dashboard() {
                         />
                       </div>
 
-                      {/* Aftershock Toggle + Run Button row */}
-                      <div className="flex gap-3">
-                        <label className="flex-1 flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 cursor-pointer hover:border-cyan-500/30 transition-colors">
-                          <span className="text-sm font-semibold text-slate-300">Aftershocks</span>
-                          <div className={`w-10 h-5 rounded-full p-1 flex transition-colors duration-300 ${aftershocksEnabled ? 'bg-cyan-500' : 'bg-slate-700'}`}>
-                            <div className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${aftershocksEnabled ? 'translate-x-5' : 'translate-x-0'}`}></div>
-                          </div>
-                          <input type="checkbox" checked={aftershocksEnabled} onChange={toggleAftershocks} className="hidden" />
-                        </label>
-                      </div>
-
                       <div className="flex gap-3 mt-3">
                         <button
                           onClick={handleClearMap}
@@ -272,13 +217,44 @@ export default function Dashboard() {
                         </button>
                       </div>
 
+                      {/* Simulation summary if results exist */}
+                      {stats && (
+                        <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                          <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Latest Simulation</div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Severe Zone</span>
+                              <span className="text-red-400 font-mono">{stats.radii.severe.toFixed(1)} km</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Moderate Zone</span>
+                              <span className="text-orange-400 font-mono">{stats.radii.moderate.toFixed(1)} km</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Buildings Hit</span>
+                              <span className="text-red-400 font-mono">{stats.buildings.destroyed + stats.buildings.majorDamage}/{stats.buildings.total}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Roads Blocked</span>
+                              <span className="text-red-400 font-mono">{stats.roads.blocked}/{stats.roads.total}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeSection === 'simulation' && (
+                    <div className="space-y-3">
+
+
                       {/* ── Live Feed Controls ── */}
                       <div className="p-3 mt-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Live Disaster Feed</div>
+                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-3">Live Earthquake Monitor</div>
                         
                         <div className="mb-3">
                           <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm text-slate-300">Frequency (ms)</span>
+                            <span className="text-sm text-slate-300">Poll Frequency (ms)</span>
                             <span className="text-sm font-bold text-emerald-400">{feedIntervalMs}</span>
                           </div>
                           <input 
@@ -291,68 +267,75 @@ export default function Dashboard() {
                           />
                         </div>
 
-                        <button
-                          onClick={handleToggleFeed}
-                          className={`w-full flex justify-center items-center gap-2 px-5 py-2 rounded-lg font-bold text-sm uppercase tracking-wider transition-all duration-300 ${
-                            isFeedActive
-                              ? 'bg-slate-800 hover:bg-slate-700 text-red-400 border border-red-500/50'
-                              : 'bg-emerald-600/80 hover:bg-emerald-500 text-white border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                          }`}
-                        >
-                          <Activity size={16} className={isFeedActive ? 'animate-pulse' : ''} />
-                          {isFeedActive ? 'Stop Feed' : 'Start Live Feed'}
-                        </button>
-
-                        {isFeedActive && (
-                          <div className="text-xs text-center text-slate-400 mt-2">
-                            Streaming data: {processedPointsCount.toLocaleString()} processed ({liveEarthquakes.length.toLocaleString()} rendered)
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleClearMap}
+                            className="flex-1 flex justify-center items-center gap-2 px-3 py-2 rounded-lg font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                          >
+                            <RefreshCw size={14} /> Clear
+                          </button>
+                          <button
+                            onClick={handleToggleFeed}
+                            className={`flex-[2] flex justify-center items-center gap-2 px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-300 ${
+                              isFeedActive
+                                ? 'bg-slate-800 hover:bg-slate-700 text-red-400 border border-red-500/50'
+                                : 'bg-emerald-600/80 hover:bg-emerald-500 text-white border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                            }`}
+                          >
+                            <Activity size={16} className={isFeedActive ? 'animate-pulse' : ''} />
+                            {isFeedActive ? 'Stop' : 'Start'}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Stats Summary */}
-                      {stats && (
-                        <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                          <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Results</div>
-                          <div className="grid grid-cols-3 gap-2 text-center">
-                            <div>
-                              <div className="text-lg font-bold text-red-400">{stats.buildings.destroyed}</div>
-                              <div className="text-[10px] text-slate-500">Destroyed</div>
-                            </div>
-                            <div>
-                              <div className="text-lg font-bold text-orange-400">{stats.buildings.majorDamage}</div>
-                              <div className="text-[10px] text-slate-500">Major Dmg</div>
-                            </div>
-                            <div>
-                              <div className="text-lg font-bold text-yellow-400">{stats.buildings.minorDamage}</div>
-                              <div className="text-[10px] text-slate-500">Minor Dmg</div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 text-center mt-2 pt-2 border-t border-slate-700/50">
-                            <div>
-                              <div className="text-sm font-bold text-red-400">{stats.roads.blocked}/{stats.roads.total}</div>
-                              <div className="text-[10px] text-slate-500">Roads Blocked</div>
-                            </div>
-                            <div>
-                              <div className="text-sm font-bold text-amber-400">{stats.aftershockCount}</div>
-                              <div className="text-[10px] text-slate-500">Aftershocks</div>
-                            </div>
-                          </div>
+                      <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                        <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Detection Status</div>
+                        <div className="flex justify-between items-center p-2 bg-slate-900 rounded border border-slate-700">
+                          <span className="text-slate-400 text-sm">Total Detected</span>
+                          <span className="text-cyan-400 font-bold text-lg">{processedPointsCount.toLocaleString()}</span>
                         </div>
-                      )}
+                        {/* Last Detected Earthquake Info */}
+                        {lastDetectedEarthquake ? (
+                          <div className="mt-3 text-xs border-t border-slate-700/50 pt-2">
+                            <div className="text-slate-500 mb-1">Latest Event</div>
+                            <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">Mag:</span>
+                                <span className="text-red-400 font-bold">{lastDetectedEarthquake.magnitude.toFixed(1)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500">Depth:</span>
+                                <span className="text-cyan-400">{lastDetectedEarthquake.depth} km</span>
+                              </div>
+                              <div className="col-span-2 flex justify-between">
+                                <span className="text-slate-500">Location:</span>
+                                <span className="text-slate-300 font-mono">{formatCoords(lastDetectedEarthquake)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-xs text-slate-500 italic text-center border-t border-slate-700/50 pt-2">
+                            Waiting for events...
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   {activeSection === 'ml-simulation' && (
-                    <MLSimulationPanel />
-                  )}
-
-                  {activeSection === 'raster' && (
-                    <RasterLayersPanel />
+                    <React.Suspense fallback={<div className="p-4 text-sm text-slate-400 italic">Loading ML Panel...</div>}>
+                      <MLSimulationPanel />
+                    </React.Suspense>
                   )}
 
                   {activeSection === 'layers' && (
-                    <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                      {/* Raster Data Panel */}
+                      <React.Suspense fallback={<div className="p-4 text-sm text-slate-400 italic">Loading Raster Data...</div>}>
+                        <RasterLayersPanel />
+                      </React.Suspense>
+                      
                       {/* Base Layers — superimposable with opacity */}
                       <div>
                         <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Base Layers</div>

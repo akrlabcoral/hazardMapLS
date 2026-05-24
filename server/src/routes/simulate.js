@@ -29,7 +29,7 @@ let activeSimulation = {
  */
 router.post('/start', async (req, res, next) => {
   try {
-    const { epicenter, magnitude, depth, aftershocks } = req.body;
+    const { epicenter, magnitude, depth } = req.body;
 
     if (!epicenter || typeof epicenter.lng !== 'number' || typeof epicenter.lat !== 'number') {
       return res.status(400).json({ error: 'Invalid epicenter.' });
@@ -41,7 +41,7 @@ router.post('/start', async (req, res, next) => {
     activeSimulation = {
       isRunning: true,
       startTime: new Date(),
-      params: { epicenter, magnitude, depth, aftershocks }
+      params: { epicenter, magnitude, depth }
     };
 
     // ── Fetch Spatial Data from PostGIS ────────────────────────────────────
@@ -86,7 +86,6 @@ router.post('/start', async (req, res, next) => {
       epicenter,
       magnitude,
       depth || 10,
-      aftershocks || false,
       buildingsGeoJson,
       roadsGeoJson
     );
@@ -133,10 +132,11 @@ router.post('/start', async (req, res, next) => {
         source: 'REST API',
         epicenter,
         magnitude,
-        depth: depth || 10,
-        aftershocksEnabled: aftershocks || false,
+        depth: depth || 10
       },
     });
+
+    activeSimulation.isRunning = false;
 
     res.json({ success: true, simulation: results });
   } catch (err) {

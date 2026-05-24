@@ -127,7 +127,12 @@ class SimulationFeedService {
       // Combine existing features with the new batch
       const combined = [...currentFeatures, ...this.batchedFeatures];
       
-      setLiveEarthquakes(combined);
+      // Apply sliding window to prevent infinite memory growth
+      const pruned = combined.length > this.MAX_WINDOW_SIZE 
+        ? combined.slice(-this.MAX_WINDOW_SIZE) 
+        : combined;
+      
+      setLiveEarthquakes(pruned);
       this.batchedFeatures = []; // Clear the batch
     }
   }

@@ -5,6 +5,11 @@ const useStore = create((set) => ({
   isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   
+  sidebarWidth: 288,
+  isDraggingSidebar: false,
+  setSidebarWidth: (width) => set({ sidebarWidth: width }),
+  setIsDraggingSidebar: (isDragging) => set({ isDraggingSidebar: isDragging }),
+  
   activeSection: 'disasters',
   setActiveSection: (section) => set({ activeSection: section }),
 
@@ -18,8 +23,6 @@ const useStore = create((set) => ({
   earthquakeDepth: 10, // km, range 1-100
   setEarthquakeDepth: (depth) => set({ earthquakeDepth: depth }),
   
-  aftershocksEnabled: false,
-  toggleAftershocks: () => set((state) => ({ aftershocksEnabled: !state.aftershocksEnabled })),
   
   // Simulation results from engine
   simulationResults: null,
@@ -117,6 +120,8 @@ const useStore = create((set) => ({
   setLiveEarthquakes: (features) => set({ liveEarthquakes: features }),
   clearLiveEarthquakes: () => set({ liveEarthquakes: [], processedPointsCount: 0 }),
   setProcessedPointsCount: (count) => set({ processedPointsCount: count }),
+  lastDetectedEarthquake: null,
+  setLastDetectedEarthquake: (info) => set({ lastDetectedEarthquake: info }),
   // ── ML Simulation State ────────────────────────────────────────────────────
   mlSimulationData: null,
   setMlSimulationData: (data) => set({ mlSimulationData: data }),

@@ -92,15 +92,24 @@ class EarthquakeModel:
             max_effect = df["predicted_effect"].max()
             df.loc[df["distance from source"] == 0, "predicted_effect"] = max_effect
             
-        # Normalize the predicted effect to 0-1 for MapLibre Heatmap
-        # Assuming MMI scale 1 to 10
+        # Normalize the predicted effect to 0-1 for a base intensity
         min_effect = df["predicted_effect"].min()
         max_effect = df["predicted_effect"].max()
         
         if max_effect == min_effect:
-            df["intensity_normalized"] = 1.0
+            base_intensity = 1.0
         else:
-            df["intensity_normalized"] = (df["predicted_effect"] - min_effect) / (max_effect - min_effect)
+            base_intensity = (df["predicted_effect"] - min_effect) / (max_effect - min_effect)
+            
+        # Apply Gaussian attenuation based on distance to enforce realistic gradient
+        max_dist = df["distance from source"].max()
+        if max_dist > 0:
+            # Set sigma so that intensity decays smoothly across the radius
+            # This configures ~0-20% as red (>0.85), 20-40% as orange, down to blue at edges
+            sigma = max_dist * 0.35  
+            df["intensity_normalized"] = base_intensity * np.exp(-(df["distance from source"]**2) / (2 * sigma**2))
+        else:
+            df["intensity_normalized"] = base_intensity
             
         return df
 

@@ -84,6 +84,7 @@ services:
       - "5173:5173"
     environment:
       NODE_ENV: development
+      VITE_ML_API_URL: http://ml-service:8000
     volumes:
       - ./src:/app/src
       - ./index.html:/app/index.html

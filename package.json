@@ -18,6 +18,8 @@
   "type": "module",
   "dependencies": {
     "@turf/circle": "^7.3.5",
+    "@turf/helpers": "^7.3.5",
+    "@turf/isolines": "^7.3.5",
     "framer-motion": "^12.38.0",
     "geotiff": "^3.0.5",
     "lodash": "^4.17.21",

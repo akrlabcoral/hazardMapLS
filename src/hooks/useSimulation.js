@@ -25,7 +25,6 @@ export function useSimulation() {
   const earthquakeEpicenter  = useStore((s) => s.earthquakeEpicenter);
   const earthquakeMagnitude  = useStore((s) => s.earthquakeMagnitude);
   const earthquakeDepth      = useStore((s) => s.earthquakeDepth);
-  const aftershocksEnabled   = useStore((s) => s.aftershocksEnabled);
   const isSimulationRunning  = useStore((s) => s.isSimulationRunning);
   const wsStatus             = useStore((s) => s.wsStatus);
 
@@ -48,7 +47,6 @@ export function useSimulation() {
             epicenter:   earthquakeEpicenter,
             magnitude:   earthquakeMagnitude,
             depth:       earthquakeDepth,
-            aftershocks: aftershocksEnabled,
           })
         });
 
@@ -74,7 +72,6 @@ export function useSimulation() {
         earthquakeEpicenter,
         earthquakeMagnitude,
         earthquakeDepth,
-        aftershocksEnabled,
         buildingsData,
         roadsData,
       );
@@ -88,7 +85,7 @@ export function useSimulation() {
     }
   }, [
     earthquakeEpicenter, earthquakeMagnitude, earthquakeDepth,
-    aftershocksEnabled,  isSimulationRunning, wsStatus,
+    isSimulationRunning, wsStatus,
     setSimulationResults, setIsSimulationRunning, setRealtimeMode,
   ]);
 

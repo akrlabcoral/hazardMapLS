@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Bell, UserCircle, Activity } from 'lucide-react';
+import { Shield, Bell, UserCircle, Activity, Menu } from 'lucide-react';
 import useStore from '../store/useStore';
 
 // ── WS Status Badge ────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ export default function Navbar() {
           onClick={toggleSidebar}
           className="p-2 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
         >
-          <Activity className="w-6 h-6 neon-text" />
+          <Menu className="w-6 h-6 neon-text" />
         </button>
         <div className="flex items-center gap-2">
           <Shield className="w-6 h-6 text-cyan-400" />

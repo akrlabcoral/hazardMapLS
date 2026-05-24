@@ -1,14 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldAlert, AlertTriangle, Settings, Database, Sliders, Cpu } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Settings, Database, Sliders, Cpu, Layers, Radio, Play } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const navItems = [
   { id: 'disasters',  icon: ShieldAlert,    label: 'Disaster Controls' },
-  { id: 'raster',     icon: Database,       label: 'Raster Data'       },
-  { id: 'layers',     icon: Settings,       label: 'Map Layers'        },
-  { id: 'simulation', icon: Sliders,        label: 'Simulation Controls'},
-  { id: 'ml-simulation', icon: Cpu,         label: 'Earthquake Simulation'},
+  { id: 'layers',     icon: Layers,       label: 'Map Layers'        },
+  { id: 'simulation', icon: Radio,        label: 'Live Feed'},
+  { id: 'ml-simulation', icon: Play,         label: 'Earthquake Simulation'},
   { id: 'alerts',     icon: AlertTriangle,  label: 'Alerts'            },
 ];
 
@@ -43,12 +42,40 @@ export default function Sidebar() {
   const activeSection = useStore((state) => state.activeSection);
   const setActiveSection = useStore((state) => state.setActiveSection);
 
+  const sidebarWidth = useStore((state) => state.sidebarWidth);
+  const setSidebarWidth = useStore((state) => state.setSidebarWidth);
+  const isDraggingSidebar = useStore((state) => state.isDraggingSidebar);
+  const setIsDraggingSidebar = useStore((state) => state.setIsDraggingSidebar);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    setIsDraggingSidebar(true);
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const handleMouseMove = (moveEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newWidth = Math.max(240, Math.min(480, startWidth + deltaX));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingSidebar(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   return (
     <motion.aside
       initial={{ x: -300 }}
-      animate={{ x: isSidebarOpen ? 0 : -300 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="absolute top-16 left-0 bottom-0 w-72 glass-panel z-40 border-t-0 border-l-0 flex flex-col"
+      animate={{ x: isSidebarOpen ? 0 : -(sidebarWidth + 20) }}
+      transition={isDraggingSidebar ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+      className="absolute top-0 left-0 bottom-0 glass-panel z-40 border-t-0 border-l-0 flex flex-col"
+      style={{ width: sidebarWidth }}
     >
       <div className="p-4 flex-1 overflow-y-auto space-y-2">
         {navItems.map((item) => {
@@ -77,6 +104,14 @@ export default function Sidebar() {
       
       {/* Dynamic connection status footer */}
       <ConnectionFooter />
+
+      {/* Draggable resize handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-cyan-500/30 active:bg-cyan-500/50 transition-colors z-50 group flex items-center justify-center"
+      >
+        <div className={`w-[1px] h-12 transition-colors rounded ${isDraggingSidebar ? 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.6)]' : 'bg-slate-700 group-hover:bg-cyan-400 group-hover:shadow-[0_0_8px_rgba(6,182,212,0.6)]'}`} />
+      </div>
     </motion.aside>
   );
 }

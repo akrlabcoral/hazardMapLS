@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
 import circle from '@turf/circle';
+import { isolines } from '@turf/isolines';
 import useStore from '../store/useStore';
 import { mapLayerService } from '../services/mapLayerService';
 import { rasterService } from '../services/rasterService';
@@ -9,12 +10,10 @@ import { simulationFeedService } from '../services/simulationFeedService';
 // Layer IDs for simulation visualization
 const SIM_LAYERS = {
   HAZARD_FILL: 'sim-hazard-fill',
-  HAZARD_LINE: 'sim-hazard-line',
   BUILDINGS_DAMAGED: 'sim-buildings-damaged',
   BUILDINGS_INTACT: 'sim-buildings-intact',
   ROADS_BLOCKED: 'sim-roads-blocked',
   ROADS_CLEAR: 'sim-roads-clear',
-  AFTERSHOCKS: 'sim-aftershocks',
   SHOCKWAVE: 'sim-shockwave',
   EPICENTER: 'sim-epicenter',
 };
@@ -50,7 +49,6 @@ export default function MapView() {
     mapInstance.addSource('sim-hazard-source', { type: 'geojson', data: emptyFC });
     mapInstance.addSource('sim-buildings-source', { type: 'geojson', data: emptyFC });
     mapInstance.addSource('sim-roads-source', { type: 'geojson', data: emptyFC });
-    mapInstance.addSource('sim-aftershocks-source', { type: 'geojson', data: emptyFC });
     mapInstance.addSource('sim-shockwave-source', { type: 'geojson', data: emptyFC });
     mapInstance.addSource('sim-epicenter-source', { type: 'geojson', data: emptyFC });
     mapInstance.addSource('sim-live-feed-source', { type: 'geojson', data: emptyFC });
@@ -60,42 +58,23 @@ export default function MapView() {
     // --- Hazard Zone Fill ---
     mapInstance.addLayer({
       id: SIM_LAYERS.HAZARD_FILL,
-      type: 'fill',
+      type: 'heatmap',
       source: 'sim-hazard-source',
+      maxzoom: 15,
       paint: {
-        'fill-color': [
-          'match', ['get', 'zone'],
-          'severe', '#ef4444',
-          'moderate', '#f97316',
-          'light', '#eab308',
-          '#888'
+        'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity'], 0, 0, 1.0, 1],
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.2, 15, 3.5],
+        'heatmap-color': [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0.0, 'rgba(0,0,255,0)',
+          0.1, 'rgba(0,0,255,0.4)', // blue
+          0.3, '#10b981', // green
+          0.5, '#eab308', // yellow
+          0.7, '#f97316', // orange
+          0.9, '#ef4444'  // red
         ],
-        // Increased opacity values for more dramatic, visible hazard zones
-        'fill-opacity': [
-          'match', ['get', 'zone'],
-          'severe', 0.45,
-          'moderate', 0.3,
-          'light', 0.18,
-          0.1
-        ]
-      }
-    });
-
-    // --- Hazard Zone Outline ---
-    mapInstance.addLayer({
-      id: SIM_LAYERS.HAZARD_LINE,
-      type: 'line',
-      source: 'sim-hazard-source',
-      paint: {
-        'line-color': [
-          'match', ['get', 'zone'],
-          'severe', '#ef4444',
-          'moderate', '#f97316',
-          'light', '#eab308',
-          '#888'
-        ],
-        'line-width': 2,
-        'line-dasharray': [3, 2]
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 10, 15, 60],
+        'heatmap-opacity': 0.855
       }
     });
 
@@ -179,52 +158,31 @@ export default function MapView() {
       }
     });
 
-    // --- Aftershocks ---
-    mapInstance.addLayer({
-      id: SIM_LAYERS.AFTERSHOCKS,
-      type: 'circle',
-      source: 'sim-aftershocks-source',
-      paint: {
-        'circle-radius': [
-          'interpolate', ['linear'], ['get', 'magnitude'],
-          1, 4,
-          5, 10
-        ],
-        'circle-color': '#f59e0b',
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#fff',
-        'circle-opacity': 0.9
-      }
-    });
+
 
     // --- Live Feed Heatmap --- Cinematic multi-color intensity gradient
-    // Color ramp: dark-red (highest) → red → orange → yellow → green → blue (lowest)
-    // Creates smooth Gaussian-style radial falloff matching seismic intensity visualization
     mapInstance.addLayer({
       id: 'sim-live-feed-heatmap',
       type: 'heatmap',
       source: 'sim-live-feed-source',
       maxzoom: 15,
       paint: {
-        // Weight: maps predicted_effect (3.6-6.5 range) to heatmap intensity weight
-        'heatmap-weight': ['interpolate', ['linear'], ['get', 'predicted_effect'], 0, 0.1, 10, 1],
+        // Weight: maps currentIntensity (0 to 10) to heatmap intensity weight (0 to 1)
+        'heatmap-weight': ['interpolate', ['linear'], ['get', 'currentIntensity'], 0, 0, 10, 1],
         // Intensity: increases with zoom for detail preservation at higher zoom levels
-        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.5, 15, 4],
-        // Premium cinematic color ramp — 9-stop gradient for smooth transitions
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 15, 3],
+        // Realistic intensity colors matching the standard scale
         'heatmap-color': [
           'interpolate', ['linear'], ['heatmap-density'],
           0,    'rgba(0,0,255,0)',
-          0.1,  'rgba(0,80,255,0.4)',
-          0.2,  'rgba(0,180,255,0.6)',
-          0.35, 'rgba(0,255,128,0.7)',
-          0.5,  'rgba(255,255,0,0.75)',
-          0.65, 'rgba(255,180,0,0.8)',
-          0.8,  'rgba(255,80,0,0.85)',
-          0.9,  'rgba(255,20,0,0.9)',
-          1,    'rgba(200,0,0,0.95)'
+          0.1,  'rgba(0,0,255,0.4)',      // Blue (Weak)
+          0.3,  'rgba(0,255,0,0.6)',      // Green (Light)
+          0.5,  'rgba(255,255,0,0.7)',    // Yellow (Mild)
+          0.7,  'rgba(255,165,0,0.85)',   // Orange (Moderate)
+          0.9,  'rgba(255,0,0,0.95)'      // Red (Severe)
         ],
-        // Larger radius for smoother Gaussian blending — atmospheric glow effect
-        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 6, 15, 50],
+        // Dynamic radius depending on zoom
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 8, 15, 50],
         'heatmap-opacity': 0.85
       }
     });
@@ -291,19 +249,39 @@ export default function MapView() {
       source: 'sim-ml-heatmap-source',
       maxzoom: 15,
       paint: {
-        'heatmap-weight': ['get', 'intensity'],
-        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.5, 15, 4],
+        'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity_normalized'], 0, 0, 1.0, 1],
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.2, 15, 3.5],
         'heatmap-color': [
           'interpolate', ['linear'], ['heatmap-density'],
           0.0, 'rgba(0,0,255,0)',
-          0.2, '#06b6d4', // cyan
-          0.4, '#10b981', // green
-          0.6, '#eab308', // yellow
-          0.8, '#f97316', // orange
-          1.0, '#ef4444'  // red
+          0.1, 'rgba(0,0,255,0.4)', // blue
+          0.3, '#10b981', // green
+          0.5, '#eab308', // yellow
+          0.7, '#f97316', // orange
+          0.9, '#ef4444'  // red
         ],
-        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 15, 15, 60],
-        'heatmap-opacity': 0.8
+        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 10, 15, 60],
+        'heatmap-opacity': 0.85
+      }
+    });
+
+    // --- ML Contours Layer ---
+    mapInstance.addLayer({
+      id: 'sim-ml-contours-layer',
+      type: 'line',
+      source: 'sim-ml-contours-source',
+      paint: {
+        'line-color': [
+          'interpolate', ['linear'], ['get', 'intensity'],
+          0.1, '#06b6d4', // cyan
+          0.3, '#10b981', // green
+          0.5, '#eab308', // yellow
+          0.7, '#f97316', // orange
+          0.9, '#ef4444'  // red
+        ],
+        'line-width': 2,
+        'line-opacity': 0.9,
+        'line-dasharray': [2, 1]
       }
     });
 
@@ -468,7 +446,6 @@ export default function MapView() {
       const hazardSrc = map.current.getSource('sim-hazard-source');
       const buildingSrc = map.current.getSource('sim-buildings-source');
       const roadsSrc = map.current.getSource('sim-roads-source');
-      const aftershockSrc = map.current.getSource('sim-aftershocks-source');
 
       if (!hazardSrc) return;
 
@@ -477,14 +454,22 @@ export default function MapView() {
         hazardSrc.setData(emptyFC);
         buildingSrc.setData(emptyFC);
         roadsSrc.setData(emptyFC);
-        aftershockSrc.setData(emptyFC);
+
+        const shockwaveSrc = map.current.getSource('sim-shockwave-source');
+        if (shockwaveSrc) {
+          shockwaveSrc.setData(emptyFC);
+        }
+        if (shockwaveAnimRef.current) {
+          cancelAnimationFrame(shockwaveAnimRef.current);
+          shockwaveAnimRef.current = null;
+        }
+
         return;
       }
 
       hazardSrc.setData(simulationResults.hazardZones);
       buildingSrc.setData(simulationResults.damagedBuildings);
       roadsSrc.setData(simulationResults.blockedRoads);
-      aftershockSrc.setData(simulationResults.aftershocks);
 
       // Trigger shockwave animation
       if (earthquakeEpicenter && simulationResults.stats) {
@@ -511,33 +496,55 @@ export default function MapView() {
     }
   }, [liveEarthquakes]);
 
-  // Sync ML Heatmap Data
+  // Sync ML Heatmap & Contours Data
   useEffect(() => {
     if (!map.current) return;
-    const source = map.current.getSource('sim-ml-heatmap-source');
-    if (source) {
-      if (mlSimulationData) {
+    const heatmapSource = map.current.getSource('sim-ml-heatmap-source');
+    const contoursSource = map.current.getSource('sim-ml-contours-source');
+    
+    if (heatmapSource && contoursSource) {
+      if (mlSimulationData && mlSimulationData.length > 0) {
         // Build GeoJSON FeatureCollection from JSON array
         const features = mlSimulationData.map((pt) => ({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [pt.lng, pt.lat] },
           properties: { intensity: pt.intensity }
         }));
-        source.setData({ type: 'FeatureCollection', features });
+        const fc = { type: 'FeatureCollection', features };
+        heatmapSource.setData(fc);
+
+        try {
+          const breaks = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+          const lines = isolines(fc, breaks, { zProperty: 'intensity' });
+          contoursSource.setData(lines);
+        } catch (err) {
+          console.warn('[MapView] Failed to generate contours (grid might not be perfect):', err);
+          contoursSource.setData({ type: 'FeatureCollection', features: [] });
+        }
       } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
+        const emptyFC = { type: 'FeatureCollection', features: [] };
+        heatmapSource.setData(emptyFC);
+        contoursSource.setData(emptyFC);
       }
     }
   }, [mlSimulationData]);
 
-  // Sync ML Layer Visibility
+  // Sync ML Layer Visibility & enforce top z-index stack order
   useEffect(() => {
     if (!map.current) return;
+    
     const heatmapLayer = 'sim-ml-heatmap-layer';
     if (map.current.getLayer(heatmapLayer)) {
       map.current.setLayoutProperty(heatmapLayer, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
+      if (mlHeatmapVisible) map.current.moveLayer(heatmapLayer); // Move to top
     }
-  }, [mlHeatmapVisible]);
+    
+    const contoursLayer = 'sim-ml-contours-layer';
+    if (map.current.getLayer(contoursLayer)) {
+      map.current.setLayoutProperty(contoursLayer, 'visibility', mlContoursVisible ? 'visible' : 'none');
+      if (mlContoursVisible) map.current.moveLayer(contoursLayer); // Move to top (above heatmap)
+    }
+  }, [mlHeatmapVisible, mlContoursVisible, mlSimulationData]);
 
   return (
     <div className="absolute inset-0 z-0">

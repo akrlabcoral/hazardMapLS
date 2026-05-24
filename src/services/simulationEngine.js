@@ -48,29 +48,64 @@ export function calculateHazardRadii(magnitude, depth) {
 }
 
 /**
- * Generate concentric hazard zone GeoJSON polygons.
+ * Generate concentric hazard zone points for realistic Gaussian heatmap visualization.
  */
 export function generateHazardZones(epicenter, magnitude, depth) {
   const radii = calculateHazardRadii(magnitude, depth);
+  const maxRadius = radii.light;
   const center = [epicenter.lng, epicenter.lat];
+  const features = [];
+  
+  // Set sigma for Gaussian decay to distribute 0-20% red, 20-40% orange, etc.
+  const sigma = maxRadius * 0.35;
+  
+  // Calculate a step size so we generate a reasonably dense grid (e.g., ~25 radial steps)
+  const stepKm = Math.max(0.5, maxRadius / 25);
+  
+  const R = 6371; // Earth radius in km
+  const lat1 = center[1] * Math.PI / 180;
+  const lon1 = center[0] * Math.PI / 180;
 
-  const lightZone = {
-    ...circle(center, radii.light, { units: 'kilometers', steps: 64 }),
-    properties: { zone: 'light', radius: radii.light }
-  };
-  const moderateZone = {
-    ...circle(center, radii.moderate, { units: 'kilometers', steps: 64 }),
-    properties: { zone: 'moderate', radius: radii.moderate }
-  };
-  const severeZone = {
-    ...circle(center, radii.severe, { units: 'kilometers', steps: 64 }),
-    properties: { zone: 'severe', radius: radii.severe }
-  };
+  for (let r = 0; r <= maxRadius; r += stepKm) {
+    if (r === 0) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: center },
+        properties: { intensity: 1.0 }
+      });
+      continue;
+    }
+    
+    // Number of points in this ring based on circumference to keep point density consistent
+    const circumference = 2 * Math.PI * r;
+    const numPoints = Math.max(8, Math.floor(circumference / stepKm));
+    
+    // Gaussian attenuation formula
+    const intensity = Math.exp(-(r * r) / (2 * sigma * sigma));
+    
+    // Optimize: Ignore extremely faded outer points
+    if (intensity < 0.01) continue;
+    
+    for (let i = 0; i < numPoints; i++) {
+      const bearing = (i / numPoints) * 360;
+      const brng = bearing * Math.PI / 180;
+      
+      const lat2 = Math.asin(Math.sin(lat1) * Math.cos(r / R) +
+                             Math.cos(lat1) * Math.sin(r / R) * Math.cos(brng));
+      const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(r / R) * Math.cos(lat1),
+                                     Math.cos(r / R) - Math.sin(lat1) * Math.sin(lat2));
+      
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [lon2 * 180 / Math.PI, lat2 * 180 / Math.PI] },
+        properties: { intensity }
+      });
+    }
+  }
 
-  // Order: light first (bottom), then moderate, then severe (top)
   return {
     type: 'FeatureCollection',
-    features: [lightZone, moderateZone, severeZone]
+    features
   };
 }
 
@@ -148,53 +183,15 @@ export function simulateRoadBlockages(epicenter, magnitude, depth, roadsGeoJson)
   return { type: 'FeatureCollection', features };
 }
 
-/**
- * Generate aftershock points within the moderate hazard zone.
- */
-export function generateAftershocks(epicenter, magnitude, depth) {
-  const radii = calculateHazardRadii(magnitude, depth);
-  const seed = Math.floor(magnitude * 1234 + depth * 56);
-  const rng = seededRandom(seed);
 
-  const count = Math.floor(rng() * 6) + 3; // 3-8 aftershocks
-  const features = [];
-
-  for (let i = 0; i < count; i++) {
-    // Random position within moderate radius
-    const angle = rng() * Math.PI * 2;
-    const dist = rng() * radii.moderate;
-    // Approximate degree offset (1 degree ≈ 111 km)
-    const dLng = (dist * Math.cos(angle)) / (111 * Math.cos((epicenter.lat * Math.PI) / 180));
-    const dLat = (dist * Math.sin(angle)) / 111;
-
-    const afterMag = Math.max(1, magnitude - 1 - rng() * 2);
-
-    features.push({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [epicenter.lng + dLng, epicenter.lat + dLat]
-      },
-      properties: {
-        magnitude: Math.round(afterMag * 10) / 10,
-        type: 'aftershock'
-      }
-    });
-  }
-
-  return { type: 'FeatureCollection', features };
-}
 
 /**
  * Run the full simulation. Returns all results in a single object.
  */
-export function runSimulation(epicenter, magnitude, depth, aftershocksEnabled, buildingsData, roadsData) {
+export function runSimulation(epicenter, magnitude, depth, buildingsData, roadsData) {
   const hazardZones = generateHazardZones(epicenter, magnitude, depth);
   const damagedBuildings = simulateBuildingDamage(epicenter, magnitude, depth, buildingsData);
   const blockedRoads = simulateRoadBlockages(epicenter, magnitude, depth, roadsData);
-  const aftershocks = aftershocksEnabled
-    ? generateAftershocks(epicenter, magnitude, depth)
-    : { type: 'FeatureCollection', features: [] };
 
   // Compute stats
   const totalBuildings = damagedBuildings.features.length;
@@ -212,12 +209,10 @@ export function runSimulation(epicenter, magnitude, depth, aftershocksEnabled, b
     hazardZones,
     damagedBuildings,
     blockedRoads,
-    aftershocks,
     stats: {
       radii,
       buildings: { total: totalBuildings, destroyed, majorDamage, minorDamage, intact },
-      roads: { total: totalRoads, blocked, clear: totalRoads - blocked },
-      aftershockCount: aftershocks.features.length
+      roads: { total: totalRoads, blocked, clear: totalRoads - blocked }
     }
   };
 }

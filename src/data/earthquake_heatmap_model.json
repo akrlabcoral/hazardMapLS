@@ -1,0 +1,55 @@
+{
+  "earthquake_heatmap_model": {
+    "description": "Approximate real-world seismic intensity decay model for visualization heatmaps. Radius values are estimated and should be calibrated with geological datasets, soil type, depth, and attenuation models.",
+    "color_scale": {
+      "red": "Extreme impact near epicenter",
+      "orange": "Very strong shaking",
+      "yellow": "Strong shaking",
+      "light_green": "Moderate shaking",
+      "green": "Light shaking",
+      "blue": "Weak/minor detectable impact"
+    },
+    "magnitudes": [
+      {
+        "magnitude": 1,
+        "zones_km": { "red": 0.2, "orange": 0.5, "yellow": 1, "light_green": 2, "green": 4, "blue": 8 }
+      },
+      {
+        "magnitude": 2,
+        "zones_km": { "red": 0.5, "orange": 1, "yellow": 3, "light_green": 5, "green": 10, "blue": 20 }
+      },
+      {
+        "magnitude": 3,
+        "zones_km": { "red": 1, "orange": 3, "yellow": 8, "light_green": 15, "green": 30, "blue": 60 }
+      },
+      {
+        "magnitude": 4,
+        "zones_km": { "red": 3, "orange": 8, "yellow": 20, "light_green": 40, "green": 80, "blue": 150 }
+      },
+      {
+        "magnitude": 5,
+        "zones_km": { "red": 8, "orange": 20, "yellow": 50, "light_green": 100, "green": 180, "blue": 300 }
+      },
+      {
+        "magnitude": 6,
+        "zones_km": { "red": 20, "orange": 50, "yellow": 120, "light_green": 220, "green": 400, "blue": 700 }
+      },
+      {
+        "magnitude": 7,
+        "zones_km": { "red": 50, "orange": 120, "yellow": 250, "light_green": 450, "green": 700, "blue": 1200 }
+      },
+      {
+        "magnitude": 8,
+        "zones_km": { "red": 120, "orange": 250, "yellow": 500, "light_green": 900, "green": 1500, "blue": 2500 }
+      },
+      {
+        "magnitude": 9,
+        "zones_km": { "red": 250, "orange": 500, "yellow": 1000, "light_green": 1800, "green": 3000, "blue": 5000 }
+      },
+      {
+        "magnitude": 10,
+        "zones_km": { "red": 500, "orange": 1000, "yellow": 2000, "light_green": 3500, "green": 6000, "blue": 9000 }
+      }
+    ]
+  }
+}
