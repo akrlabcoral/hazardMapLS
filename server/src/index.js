@@ -23,7 +23,7 @@ import simulateRouter    from './routes/simulate.js';
 import { initSocket, getIO } from './socket/index.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // ── Security & Parsing ────────────────────────────────────────────────────────
 app.use(helmet());

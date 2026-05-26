@@ -28,7 +28,7 @@ function ConnectionFooter() {
   return (
     <div className="p-4 border-t border-slate-700/50 bg-slate-900/50 relative">
       {/* Top gradient divider for premium sidebar footer separation */}
-      <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+      <div className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-cyan/30 to-transparent" />
       <div className="text-xs text-slate-500 text-center">
         HazardMap Command Link<br />
         <span className="mt-1 inline-block">{icon} {text}</span>
@@ -115,4 +115,5 @@ export default function Sidebar() {
     </motion.aside>
   );
 }
+
 

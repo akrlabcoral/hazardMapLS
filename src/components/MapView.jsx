@@ -40,6 +40,7 @@ export default function MapView() {
   const mlSimulationData = useStore((state) => state.mlSimulationData);
   const mlHeatmapVisible = useStore((state) => state.mlHeatmapVisible);
   const mlContoursVisible = useStore((state) => state.mlContoursVisible);
+  const mapStyle = useStore((state) => state.mapStyle);
 
   // Initialize simulation sources and layers on a loaded map
   const initSimulationLayers = useCallback((mapInstance) => {
@@ -357,6 +358,14 @@ export default function MapView() {
             ],
             tileSize: 256,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+          },
+          'osm-light': {
+            type: 'raster',
+            tiles: [
+              'https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
           }
         },
         layers: [
@@ -365,7 +374,16 @@ export default function MapView() {
             type: 'raster',
             source: 'osm-dark',
             minzoom: 0,
-            maxzoom: 22
+            maxzoom: 22,
+            layout: { visibility: 'visible' }
+          },
+          {
+            id: 'osm-light-layer',
+            type: 'raster',
+            source: 'osm-light',
+            minzoom: 0,
+            maxzoom: 22,
+            layout: { visibility: 'none' }
           }
         ]
       },
@@ -391,6 +409,17 @@ export default function MapView() {
       if (shockwaveAnimRef.current) cancelAnimationFrame(shockwaveAnimRef.current);
     };
   }, [mapViewport, setEarthquakeEpicenter, initSimulationLayers]);
+
+  // Sync Map Theme (Dark/Light)
+  useEffect(() => {
+    if (!map.current) return;
+    if (map.current.getLayer('osm-dark-layer')) {
+      map.current.setLayoutProperty('osm-dark-layer', 'visibility', mapStyle === 'dark' ? 'visible' : 'none');
+    }
+    if (map.current.getLayer('osm-light-layer')) {
+      map.current.setLayoutProperty('osm-light-layer', 'visibility', mapStyle === 'light' ? 'visible' : 'none');
+    }
+  }, [mapStyle]);
 
   // Sync GIS layer visibility
   useEffect(() => {

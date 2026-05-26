@@ -32,11 +32,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      PORT: 5000
+      PORT: 5001
       NODE_ENV: development
       DATABASE_URL: postgresql://hazardmap:hazardmap@postgres:5432/hazardmap
     ports:
-      - "5000:5000"
+      - "5001:5001"
     # Mount source for development hot-reload
     volumes:
       - ./src:/app/server/src

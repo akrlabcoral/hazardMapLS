@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
 
       // ── API Proxy ────────────────────────────────────────────────────────────
       // Forwards any request starting with /api from the React dev server
-      // to the Express backend (port 5000), avoiding CORS issues during
+      // to the Express backend (port 5001), avoiding CORS issues during
       // local development. In production, nginx or a load balancer handles
       // this routing instead.
       proxy: {

@@ -59,12 +59,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      PORT: 5000
+      PORT: 5001
       NODE_ENV: development
       DATABASE_URL: postgresql://hazardmap:[REDACTED]@postgres:5432/hazardmap
       FRONTEND_ORIGIN: http://localhost:5173
     ports:
-      - "127.0.0.1:5001:5000"
+      - "127.0.0.1:5001:5001"
     volumes:
       - ./server/src:/app/server/src
       - ./src/services/simulationEngine.js:/app/src/services/simulationEngine.js

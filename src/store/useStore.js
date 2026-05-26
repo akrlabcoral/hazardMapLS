@@ -11,7 +11,10 @@ const useStore = create((set) => ({
   setIsDraggingSidebar: (isDragging) => set({ isDraggingSidebar: isDragging }),
   
   activeSection: 'disasters',
-  setActiveSection: (section) => set({ activeSection: section }),
+  setActiveSection: (section) => set((state) => ({ activeSection: state.activeSection === section ? null : section })),
+
+  mapStyle: 'dark',
+  toggleMapStyle: () => set((state) => ({ mapStyle: state.mapStyle === 'dark' ? 'light' : 'dark' })),
 
   // Earthquake Simulation State
   earthquakeEpicenter: null, // { lng, lat }
@@ -34,7 +37,7 @@ const useStore = create((set) => ({
   activeAlerts: [],
   
   gisLayers: {
-    satellite: true,
+    satellite: false,
     terrain: false,
     hospitals: false,
     shelters: false,
@@ -49,8 +52,8 @@ const useStore = create((set) => ({
 
   // Per-layer opacity (0-1)
   layerOpacities: {
-    satellite: 0.5,
-    terrain: 0.5,
+    satellite: 1.0,
+    terrain: 1.0,
     hospitals: 1.0,
     shelters: 1.0,
     heatmaps: 1.0,

@@ -109,14 +109,15 @@ export default function Dashboard() {
           {/* Bottom Control Panels */}
           <div className="mt-auto flex gap-4 pointer-events-none items-end [&>*]:pointer-events-auto">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={activeSection}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="w-[480px]"
-              >
-                <ControlPanel title={activeSection.toUpperCase() + ' PANEL'}>
+              {activeSection && (
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="w-[480px]"
+                >
+                  <ControlPanel title={activeSection.toUpperCase() + ' PANEL'}>
                   {activeSection === 'disasters' && (
                     <div className="space-y-3">
                       <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
@@ -404,6 +405,7 @@ export default function Dashboard() {
                   )}
                 </ControlPanel>
               </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </motion.div>

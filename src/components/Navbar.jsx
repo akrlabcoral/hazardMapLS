@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Bell, UserCircle, Activity, Menu } from 'lucide-react';
+import { Shield, Bell, UserCircle, Activity, Menu, Moon, Sun } from 'lucide-react';
 import useStore from '../store/useStore';
 
 // ── WS Status Badge ────────────────────────────────────────────────────────────
@@ -26,6 +26,8 @@ function WsStatusBadge() {
 
 export default function Navbar() {
   const toggleSidebar = useStore((state) => state.toggleSidebar);
+  const mapStyle = useStore((state) => state.mapStyle);
+  const toggleMapStyle = useStore((state) => state.toggleMapStyle);
 
   return (
     <nav className="h-16 glass-panel flex items-center justify-between px-6 z-50 relative border-b-0">
@@ -48,6 +50,13 @@ export default function Navbar() {
       <div className="flex items-center gap-6">
         {/* Live WS connection status — updates reactively from Zustand */}
         <WsStatusBadge />
+        <button 
+          onClick={toggleMapStyle}
+          className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          title={mapStyle === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {mapStyle === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-cyan-400" />}
+        </button>
         <button className="relative p-2 hover:bg-slate-800 rounded-lg transition-colors">
           <Bell className="w-5 h-5 text-slate-300" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
