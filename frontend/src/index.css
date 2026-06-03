@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* NASA Mission Control Dark GIS Theme */
+@layer base {
+  body {
+    @apply bg-[#0a0f1e] text-[#f1f5f9] font-sans;
+    font-family: 'Inter', 'DM Sans', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-[#0d1526]/90 backdrop-blur-[12px] border border-white/[0.06] shadow-lg;
+  }
+  
+  .glass-card {
+    @apply bg-[#0d1526]/80 backdrop-blur-[12px] border border-white/[0.06] rounded-lg shadow-md transition-all duration-200;
+  }
+
+  .glass-card:hover {
+    @apply border-white/[0.12] shadow-lg;
+  }
+
+  /* Legacy classes kept for compatibility during migration */
+  .neon-text {
+    @apply text-[#00d4ff];
+  }
+
+  .neon-text-alert {
+    @apply text-[#dc2626];
+  }
+
+  .neon-border {
+    @apply border border-[#00d4ff];
+  }
+}
+
+/* MapLibre GL Overrides */
+.maplibregl-popup-content {
+  @apply bg-[#0d1526]/95 backdrop-blur-xl border border-white/[0.06] text-[#f1f5f9] rounded-lg shadow-xl;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: #0d1526 !important;
+  border-bottom-color: #0d1526 !important;
+}
+
+.maplibregl-ctrl-group {
+  @apply bg-[#0d1526]/90 backdrop-blur-md border border-white/[0.06];
+}
+
+.maplibregl-ctrl-group button {
+  @apply border-white/[0.06];
+}
+
+.maplibregl-ctrl-group button:hover {
+  @apply bg-[#0a0f1e]/80;
+}
+
+.maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Shockwave pulse animation for aftershock markers */
+@keyframes shockwave-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.pulse-ring {
+  animation: shockwave-pulse 1.5s ease-out infinite;
+}
+
+/* Simulation running glow effect */
+@keyframes sim-glow {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.sim-running-indicator {
+  animation: sim-glow 1s ease-in-out infinite;
+}

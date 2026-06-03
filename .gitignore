@@ -47,3 +47,4 @@ coverage/
 # ── Docker Volumes (local dev) ────────────────────────────────────────────────
 pgdata/
 public/rasters/*.tif
+frontend/public/rasters/slope_risk.tif

@@ -1,105 +1,23 @@
-# =============================================================================
-# HazardMap — Full-Stack Docker Compose
-# =============================================================================
-# Orchestrates the complete development environment from the project root:
-#   docker compose up            → starts database + API + frontend
-#   docker compose up --build    → rebuilds all images
-#
-# Ports:
-#   5173  → React Frontend (Vite with HMR)
-#   5001  → Express API
-#   5432  → PostgreSQL / PostGIS
-#
-# Frontend runs in a container with live reload enabled for development.
-# =============================================================================
-
 version: '3.8'
 
 services:
 
-  # ── PostgreSQL + PostGIS ────────────────────────────────────────────────────
-  # Using the official PostGIS image which bundles spatial extensions.
-  # ARCHITECTURE: PostGIS enables ST_DWithin, ST_Buffer, ST_Intersects,
-  # pgRouting for evacuation path-finding, and raster processing via
-  # PostGIS Raster — all future capabilities of HazardMap.
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: hazardmap-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: hazardmap
-      POSTGRES_PASSWORD: hazardmap
-      POSTGRES_DB: hazardmap
-    ports:
-      - "5432:5432"
-    volumes:
-      # Persistent data volume — survives container restarts
-      - pgdata:/var/lib/postgresql/data
-      # Auto-run on first container initialization (idempotent)
-      - ./server/migrations/001_init.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./server/seeds/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hazardmap"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # ── HazardMap Express API ─────────────────────────────────────────────────
-  # ARCHITECTURE: This is the stateless API tier. It will later serve:
-  #   - REST endpoints for GeoJSON spatial data
-  #   - WebSocket connections for real-time simulation broadcasts
-  #   - Proxy to a future Python/ML microservice for AI risk scoring
+  # ── Scientific Backend API ──────────────────────────────────────────────────
+  # FastAPI app serving scientific GMPE modeling and GIS computations
   api:
     build:
-      context: .
-      dockerfile: server/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: hazardmap-api
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      PORT: 5001
-      NODE_ENV: development
-      DATABASE_URL: postgresql://hazardmap:[REDACTED]@postgres:5432/hazardmap
-      FRONTEND_ORIGIN: http://localhost:5173
     ports:
-      - "127.0.0.1:5001:5001"
+      - "8000:8000"
     volumes:
-      - ./server/src:/app/server/src
-      - ./src/services/simulationEngine.js:/app/src/services/simulationEngine.js
+      - ./backend/app:/app/app
+      - ./backend/data:/app/data
 
-  # ── React Frontend (Vite) ───────────────────────────────────────────────────
-  # Runs Vite dev server with HMR (hot module reloading) enabled.
-  # All /api requests are proxied to the API service via Vite's proxy config.
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: hazardmap-frontend
-    restart: unless-stopped
-    depends_on:
-      - api
-    ports:
-      - "5173:5173"
-    environment:
-      NODE_ENV: development
-      VITE_ML_API_URL: http://ml-service:8000
-    volumes:
-      - ./src:/app/src
-      - ./index.html:/app/index.html
-      - ./vite.config.js:/app/vite.config.js
-      - ./tailwind.config.js:/app/tailwind.config.js
-      - ./postcss.config.js:/app/postcss.config.js
-    develop:
-      watch:
-        - action: sync
-          path: ./src
-          target: /app/src
-          ignore:
-            - node_modules/
-
-# ── ML Earthquake Service (FastAPI) ───────────────────────────────────────────
+  # ── ML Earthquake Service ───────────────────────────────────────────────────
+  # FastAPI app serving machine learning inference (LightGBM)
   ml-service:
     build:
       context: ./backend/ml-service
@@ -107,11 +25,30 @@ services:
     container_name: hazardmap-ml-service
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./backend/ml-service:/app
 
-# ── Named Volumes ─────────────────────────────────────────────────────────────
-volumes:
-  pgdata:
-    driver: local
+  # ── React Frontend (Vite) ───────────────────────────────────────────────────
+  # Vite development server with HMR and Docker bridge routing
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hazardmap-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+      - ml-service
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SCIENTIFIC_API_URL=http://hazardmap-api:8000
+      - VITE_ML_API_URL=http://hazardmap-ml-service:8000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+      - ./frontend/tailwind.config.js:/app/tailwind.config.js
+      - ./frontend/postcss.config.js:/app/postcss.config.js

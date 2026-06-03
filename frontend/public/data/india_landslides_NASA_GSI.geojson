@@ -1,0 +1,635 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.0669,
+          30.7352
+        ]
+      },
+      "properties": {
+        "date": "2013-06-16",
+        "location": "Kedarnath, Rudraprayag",
+        "state": "Uttarakhand",
+        "deaths": 5748,
+        "trigger": "Heavy Rainfall",
+        "type": "Debris Flow",
+        "source": "NDMA/GSI",
+        "severity": "Very High",
+        "notes": "Kedarnath disaster - worst in modern India history"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.0961,
+          30.5247
+        ]
+      },
+      "properties": {
+        "date": "2010-09-18",
+        "location": "Okhimath, Rudraprayag",
+        "state": "Uttarakhand",
+        "deaths": 38,
+        "trigger": "Heavy Rainfall",
+        "type": "Rockfall",
+        "source": "GSI",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.6794,
+          30.4834
+        ]
+      },
+      "properties": {
+        "date": "2021-02-07",
+        "location": "Chamoli, Tapovan",
+        "state": "Uttarakhand",
+        "deaths": 204,
+        "trigger": "Glacier Burst",
+        "type": "Debris Flow",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "Tapovan glacier burst triggered massive debris flow"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.2687,
+          31.0134
+        ]
+      },
+      "properties": {
+        "date": "2016-07-31",
+        "location": "Mori, Uttarkashi",
+        "state": "Uttarakhand",
+        "deaths": 11,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          80.2181,
+          29.5828
+        ]
+      },
+      "properties": {
+        "date": "2018-08-16",
+        "location": "Pithoragarh",
+        "state": "Uttarakhand",
+        "deaths": 8,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          79.5661,
+          30.5573
+        ]
+      },
+      "properties": {
+        "date": "2023-07-25",
+        "location": "Joshimath",
+        "state": "Uttarakhand",
+        "deaths": 0,
+        "trigger": "Subsidence",
+        "type": "Ground Subsidence",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": "Major sinking event, thousands displaced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.1699,
+          31.5927
+        ]
+      },
+      "properties": {
+        "date": "2022-08-19",
+        "location": "Kinnaur",
+        "state": "Himachal Pradesh",
+        "deaths": 13,
+        "trigger": "Heavy Rainfall",
+        "type": "Rockfall",
+        "source": "GSI",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.9318,
+          31.7097
+        ]
+      },
+      "properties": {
+        "date": "2017-08-13",
+        "location": "Mandi",
+        "state": "Himachal Pradesh",
+        "deaths": 46,
+        "trigger": "Heavy Rainfall",
+        "type": "Flash Flood + Landslide",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.1734,
+          31.1048
+        ]
+      },
+      "properties": {
+        "date": "2023-08-14",
+        "location": "Shimla",
+        "state": "Himachal Pradesh",
+        "deaths": 21,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.1095,
+          31.9578
+        ]
+      },
+      "properties": {
+        "date": "2021-07-25",
+        "location": "Kullu",
+        "state": "Himachal Pradesh",
+        "deaths": 9,
+        "trigger": "Heavy Rainfall",
+        "type": "Debris Flow",
+        "source": "GSI",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          78.2167,
+          31.6833
+        ]
+      },
+      "properties": {
+        "date": "2022-08-22",
+        "location": "Kinnaur, Nigulseri",
+        "state": "Himachal Pradesh",
+        "deaths": 16,
+        "trigger": "Heavy Rainfall",
+        "type": "Rockfall",
+        "source": "NDMA/GSI",
+        "severity": "Very High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.2384,
+          33.2438
+        ]
+      },
+      "properties": {
+        "date": "2014-09-02",
+        "location": "Ramban",
+        "state": "Jammu & Kashmir",
+        "deaths": 14,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.5432,
+          33.1467
+        ]
+      },
+      "properties": {
+        "date": "2021-07-18",
+        "location": "Doda",
+        "state": "Jammu & Kashmir",
+        "deaths": 7,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.5122,
+          27.533
+        ]
+      },
+      "properties": {
+        "date": "2011-09-18",
+        "location": "North Sikkim",
+        "state": "Sikkim",
+        "deaths": 97,
+        "trigger": "Earthquake + Rain",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "Very High",
+        "notes": "Post M6.9 earthquake triggered landslides"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.5162,
+          27.2322
+        ]
+      },
+      "properties": {
+        "date": "2023-10-04",
+        "location": "Singtam, South Sikkim",
+        "state": "Sikkim",
+        "deaths": 98,
+        "trigger": "Glacial Lake Outburst",
+        "type": "Flash Flood + Landslide",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "GLOF from South Lhonak Lake"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.2627,
+          27.036
+        ]
+      },
+      "properties": {
+        "date": "1968-10-05",
+        "location": "Darjeeling",
+        "state": "West Bengal",
+        "deaths": 1000,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI Historical",
+        "severity": "Very High",
+        "notes": "Worst ever WB landslide disaster"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.1837,
+          26.884
+        ]
+      },
+      "properties": {
+        "date": "2010-06-19",
+        "location": "Darjeeling, Mirik",
+        "state": "West Bengal",
+        "deaths": 21,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          88.4683,
+          27.0609
+        ]
+      },
+      "properties": {
+        "date": "2015-07-08",
+        "location": "Kalimpong",
+        "state": "West Bengal",
+        "deaths": 9,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          92.7176,
+          23.7271
+        ]
+      },
+      "properties": {
+        "date": "2014-07-31",
+        "location": "Aizawl, Mizoram",
+        "state": "Mizoram",
+        "deaths": 21,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          91.7325,
+          25.2601
+        ]
+      },
+      "properties": {
+        "date": "2019-07-13",
+        "location": "Cherrapunji",
+        "state": "Meghalaya",
+        "deaths": 8,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          94.1086,
+          25.6715
+        ]
+      },
+      "properties": {
+        "date": "2022-05-30",
+        "location": "Kohima",
+        "state": "Nagaland",
+        "deaths": 12,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.0029,
+          25.5788
+        ]
+      },
+      "properties": {
+        "date": "2018-06-06",
+        "location": "Dima Hasao",
+        "state": "Assam",
+        "deaths": 7,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.9063,
+          24.6637
+        ]
+      },
+      "properties": {
+        "date": "2023-07-04",
+        "location": "Manipur",
+        "state": "Manipur",
+        "deaths": 14,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "High",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          93.6166,
+          27.1004
+        ]
+      },
+      "properties": {
+        "date": "2015-08-02",
+        "location": "Papum Pare",
+        "state": "Arunachal Pradesh",
+        "deaths": 9,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "Moderate",
+        "notes": ""
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2327,
+          11.7818
+        ]
+      },
+      "properties": {
+        "date": "2024-07-30",
+        "location": "Mundakkai, Wayanad",
+        "state": "Kerala",
+        "deaths": 420,
+        "trigger": "Extreme Rainfall",
+        "type": "Debris Flow",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "2024 Wayanad disaster - worst in Kerala history"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.0595,
+          10.0889
+        ]
+      },
+      "properties": {
+        "date": "2018-08-08",
+        "location": "Munnar, Idukki",
+        "state": "Kerala",
+        "deaths": 34,
+        "trigger": "Extreme Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "Part of 2018 Kerala floods"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.063,
+          10.063
+        ]
+      },
+      "properties": {
+        "date": "2020-08-07",
+        "location": "Rajamala, Idukki",
+        "state": "Kerala",
+        "deaths": 65,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "Rajamala tea estate landslide"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          75.8069,
+          12.3375
+        ]
+      },
+      "properties": {
+        "date": "2018-08-15",
+        "location": "Kodagu",
+        "state": "Karnataka",
+        "deaths": 18,
+        "trigger": "Extreme Rainfall",
+        "type": "Debris Flow",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "2018 Kodagu floods + landslides"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.695,
+          11.4102
+        ]
+      },
+      "properties": {
+        "date": "2009-10-01",
+        "location": "Nilgiris, Ooty",
+        "state": "Tamil Nadu",
+        "deaths": 37,
+        "trigger": "Heavy Rainfall",
+        "type": "Landslide",
+        "source": "GSI",
+        "severity": "High",
+        "notes": "Major landslide on Ooty-Gudalur road"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          73.0677,
+          18.5088
+        ]
+      },
+      "properties": {
+        "date": "2021-07-22",
+        "location": "Raigad, Taliye",
+        "state": "Maharashtra",
+        "deaths": 84,
+        "trigger": "Extreme Rainfall",
+        "type": "Landslide",
+        "source": "NDMA",
+        "severity": "Very High",
+        "notes": "Taliye village buried"
+      }
+    }
+  ]
+}
