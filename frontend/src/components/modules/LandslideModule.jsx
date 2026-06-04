@@ -1,6 +1,7 @@
 import React from 'react';
 import useStore from '../../store/useStore';
 import { Layers, Activity, Droplets, Calendar, Filter, Mountain } from 'lucide-react';
+import { LandslidePanel } from '../../panels/disasters/LandslidePanel';
 
 export default function LandslideModule() {
   const gisLayers = useStore((state) => state.gisLayers);
@@ -97,34 +98,9 @@ export default function LandslideModule() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="p-3 bg-[#0a0f1e]/50 rounded-lg border border-white/[0.06]">
-          <div className="text-[11px] font-semibold text-[#64748b] uppercase mb-2">Analysis Summary</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-[#0d1526] p-2 rounded border border-white/[0.06]">
-              <div className="text-[10px] text-[#64748b]">Total Events</div>
-              <div className="text-[15px] font-bold text-[#f1f5f9]">{stats.events}</div>
-            </div>
-            <div className="bg-[#0d1526] p-2 rounded border border-white/[0.06]">
-              <div className="text-[10px] text-[#64748b]">Est. Deaths</div>
-              <div className="text-[15px] font-bold text-[#dc2626]">{stats.deaths}</div>
-            </div>
-            <div className="bg-[#0d1526] p-2 rounded border border-white/[0.06] col-span-2 flex justify-between items-center">
-              <span className="text-[10px] text-[#64748b]">Most Affected State</span>
-              <span className="text-[12px] font-semibold text-[#f97316]">{stats.worst}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Coming Soon */}
-        <div className="p-3 bg-white/[0.02] rounded-lg border border-dashed border-white/[0.1]">
-          <div className="text-[11px] font-semibold text-[#64748b] uppercase mb-2">Predictive Models (Coming Soon)</div>
-          <div className="grid grid-cols-2 gap-2 text-[11px] text-[#64748b]">
-            <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-[#64748b]" />Rainfall Intensity</div>
-            <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-[#64748b]" />LULC Analysis</div>
-            <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-[#64748b]" />Population Density</div>
-            <div className="flex items-center gap-1.5"><div className="w-1 h-1 rounded-full bg-[#64748b]" />River Proximity</div>
-          </div>
+        {/* Simulation Controls */}
+        <div className="mt-4 border-t border-white/[0.06] pt-4">
+          <LandslidePanel />
         </div>
       </div>
     </div>

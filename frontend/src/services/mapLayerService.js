@@ -68,7 +68,7 @@
     }
 
     setLayerVisibility(layerKey, isVisible) {
-      if (!this.map) return;
+      if (!this.map || !this.map.getStyle()) return;
       
       const visibility = isVisible ? 'visible' : 'none';
       
@@ -92,7 +92,7 @@
     }
 
     setLayerOpacity(layerKey, opacity) {
-      if (!this.map) return;
+      if (!this.map || !this.map.getStyle()) return;
 
       // GeoJSON layer opacity
       if (LAYER_CONFIGS[layerKey]) {

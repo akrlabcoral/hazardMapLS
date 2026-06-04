@@ -1,48 +1,72 @@
+"""
+app/api/simulate.py
+
+POST /api/simulate-earthquake
+
+Thin route handler — delegates all heavy computation to SimulationRunner.
+"""
+from __future__ import annotations
+
+import asyncio
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from typing import Dict
+from enum import Enum
+
 from app.gis.boundary import is_epicenter_valid
-from app.gis.grid import calculate_impacts
-from app.models.repository import save_simulation
+from app.jobs.simulation_worker import SimulationRunner
 
 router = APIRouter()
 
+
 class EarthquakeInput(BaseModel):
-    magnitude: float = Field(..., ge=3.0, le=9.5, description="Magnitude between 3 and 9.5")
-    depth: float = Field(..., gt=0, le=700, description="Depth in km, must be greater than 0 and less than 700")
-    latitude: float = Field(..., description="Epicenter latitude")
-    longitude: float = Field(..., description="Epicenter longitude")
-    gmpe_model: str = Field("indian_shield", description="GMPE Model: himalayan, continental, or indian_shield")
+    magnitude:   float            = Field(..., ge=1.0, le=10.0)
+    depth:       float            = Field(..., gt=0,   le=10000)
+    latitude:    float            = Field(..., ge=-90.0,  le=90.0)
+    longitude:   float            = Field(..., ge=-180.0, le=180.0)
+    weights:     Dict[str, float] = Field(default={"pga": 1.0})
+    gmpe_params: Dict[str, float] | None = Field(
+        default=None,
+        description="Optional custom GMPE polynomial parameters. If omitted, automatically selects based on region."
+    )
+
 
 @router.post("/simulate-earthquake")
-def simulate_earthquake(params: EarthquakeInput):
-    # 1. Validate boundary (inside India or within 100km)
+async def simulate_earthquake(params: EarthquakeInput):
+    # Validate epicenter is within the India region (includes buffer for
+    # nearby subduction zones — Nepal, Andaman, Bay of Bengal, etc.)
     if not is_epicenter_valid(params.latitude, params.longitude):
         raise HTTPException(
-            status_code=400, 
-            detail="Epicenter must be inside India or within 100km of the Indian boundary."
+            status_code=422,
+            detail=(
+                "Epicenter is outside the supported region. "
+                "HazardMap covers India and a ~1000 km buffer zone around it."
+            ),
         )
 
-    # 2. Calculate scientific impacts for West Bengal grid
     try:
-        results = calculate_impacts(
-            lat=params.latitude, 
-            lon=params.longitude, 
-            mag=params.magnitude, 
-            depth=params.depth,
-            gmpe_model=params.gmpe_model
+        # Run the simulation in a thread pool so the event loop stays free
+        # during the 2-3s blocking contour generation step.
+        result = await asyncio.to_thread(
+            SimulationRunner.run,
+            latitude     = params.latitude,
+            longitude    = params.longitude,
+            magnitude    = params.magnitude,
+            depth_km     = params.depth,
+            gmpe_params  = params.gmpe_params,
+            triggered_by = "manual",
         )
-        
-        # 3. Save simulation history
-        sim_id = save_simulation(
-            lat=params.latitude, 
-            lon=params.longitude, 
-            mag=params.magnitude, 
-            depth=params.depth,
-            district_summary=results["district_summary"]
-        )
-        
-        results["simulation_id"] = sim_id
-        return results
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+@router.get("/region")
+async def get_region(lat: float, lon: float):
+    """
+    Given a latitude and longitude, returns the tectonic region string
+    e.g., {"region": "HIMALAYA"}
+    """
+    from app.layers.pga.regions import get_tectonic_region
+    region = get_tectonic_region(lat, lon)
+    return {"region": region.value}

@@ -63,7 +63,7 @@ class AnimationManager {
         const source = this.map.getSource('sim-shockwave-source');
         if (source && source.setData) {
           source.setData({ type: 'FeatureCollection', features });
-          if (this.map.getLayer('sim-shockwave')) {
+          if (this.map.getLayer('sim-shockwave') && rings.length > 0) {
             const primary = rings[0];
             this.map.setPaintProperty('sim-shockwave', 'line-opacity', primary.opacity);
             this.map.setPaintProperty('sim-shockwave', 'line-width', primary.width);

@@ -16,7 +16,7 @@ except Exception as e:
     _india_geom = box(68.7, 8.4, 97.25, 37.6)
 
 # Pre-compute the buffered boundary (1 degree is roughly 111km at the equator)
-BUFFER_DEG = 1.0 
+BUFFER_DEG = 9.0 
 BUFFERED_INDIA = _india_geom.buffer(BUFFER_DEG)
 
 def is_epicenter_valid(lat: float, lon: float) -> bool:

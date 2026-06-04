@@ -1,45 +1,81 @@
-from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
-import json
+"""
+app/api/export.py
+
+GET /api/export/{sim_id}?format=json|csv|geojson
+
+Exports a previously saved simulation in the requested format.
+"""
+from __future__ import annotations
+
 import csv
+import json
+from enum import Enum
 from io import StringIO
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
+
 from app.models.repository import get_simulation
 
 router = APIRouter()
 
+
+class ExportFormat(str, Enum):
+    json    = "json"
+    csv     = "csv"
+    geojson = "geojson"
+
+
 @router.get("/export/{sim_id}")
-def export_simulation(sim_id: int, format: str = Query("json", description="Export format: json, csv, geojson")):
+def export_simulation(
+    sim_id: int,
+    format: ExportFormat = ExportFormat.json,
+):
     sim_data = get_simulation(sim_id)
-    if not sim_data:
-        raise HTTPException(status_code=404, detail="Simulation not found")
-        
-    if format == "json":
+    if sim_data is None:
+        raise HTTPException(status_code=404, detail=f"Simulation {sim_id} not found.")
+
+    # ------------------------------------------------------------------
+    # JSON — return the full simulation record
+    # ------------------------------------------------------------------
+    if format == ExportFormat.json:
         return sim_data
-        
-    elif format == "csv":
-        output = StringIO()
-        writer = csv.writer(output)
-        
-        # We export the district summary
-        writer.writerow(["District", "Avg PGA", "Max PGA", "Severe Cells", "Moderate Cells", "Total Cells"])
-        
-        for district in sim_data["affected_districts"]:
+
+    # ------------------------------------------------------------------
+    # CSV — district-level summary table
+    # ------------------------------------------------------------------
+    if format == ExportFormat.csv:
+        buf = StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(["District", "Max PGA (g)", "Severe Cells"])
+        for d in sim_data.get("affected_districts", []):
             writer.writerow([
-                district.get("district", ""),
-                district.get("avg_pga", 0),
-                district.get("max_pga", 0),
-                district.get("severe_cells", 0),
-                district.get("moderate_cells", 0),
-                district.get("total_cells", 0)
+                d.get("district",    ""),
+                d.get("max_pga",     0),
+                d.get("severe_cells", 0),
             ])
-            
-        csv_content = output.getvalue()
-        return Response(content=csv_content, media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=simulation_{sim_id}.csv"})
-        
-    elif format == "geojson":
-        # Usually we would export the full grid, but that might be large and require re-computing.
-        # For now, we return the summary as JSON since GeoJSON was returned in the main simulate endpoint.
-        raise HTTPException(status_code=501, detail="GeoJSON export not fully implemented for historical data yet. Please use JSON or CSV.")
-        
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported format. Use json, csv, or geojson.")
+        return Response(
+            content=buf.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=simulation_{sim_id}.csv"},
+        )
+
+    # ------------------------------------------------------------------
+    # GeoJSON — return the stored grid GeoJSON
+    # ------------------------------------------------------------------
+    if format == ExportFormat.geojson:
+        grid = sim_data.get("grid_geojson")
+        if grid is None:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    "GeoJSON not available for this simulation. "
+                    "Older simulations were saved before GeoJSON storage was enabled. "
+                    "Re-run the simulation to generate a new record with GeoJSON."
+                ),
+            )
+        return Response(
+            content=json.dumps(grid),
+            media_type="application/geo+json",
+            headers={"Content-Disposition": f"attachment; filename=simulation_{sim_id}.geojson"},
+        )

@@ -1,54 +1,55 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB:       hazardmap
+      POSTGRES_USER:     hazardmap
+      POSTGRES_PASSWORD: hazardmap_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hazardmap -d hazardmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # ── Scientific Backend API ──────────────────────────────────────────────────
-  # FastAPI app serving scientific GMPE modeling and GIS computations
-  api:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: hazardmap-api
-    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
+      - ./backend:/app
       - ./backend/app:/app/app
       - ./backend/data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://hazardmap:hazardmap_dev@db:5432/hazardmap
+    depends_on:
+      db:
+        condition: service_healthy
 
-  # ── ML Earthquake Service ───────────────────────────────────────────────────
-  # FastAPI app serving machine learning inference (LightGBM)
-  ml-service:
-    build:
-      context: ./backend/ml-service
-      dockerfile: Dockerfile
-    container_name: hazardmap-ml-service
-    restart: unless-stopped
-    ports:
-      - "8001:8000"
-    volumes:
-      - ./backend/ml-service:/app
-
-  # ── React Frontend (Vite) ───────────────────────────────────────────────────
-  # Vite development server with HMR and Docker bridge routing
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: hazardmap-frontend
-    restart: unless-stopped
-    depends_on:
-      - api
-      - ml-service
     ports:
       - "5173:5173"
-    environment:
-      - VITE_SCIENTIFIC_API_URL=http://hazardmap-api:8000
-      - VITE_ML_API_URL=http://hazardmap-ml-service:8000
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.js:/app/vite.config.js
-      - ./frontend/tailwind.config.js:/app/tailwind.config.js
-      - ./frontend/postcss.config.js:/app/postcss.config.js
+    environment:
+      - VITE_ML_API_URL=http://backend:8000
+      - VITE_SCIENTIFIC_API_URL=http://backend:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:

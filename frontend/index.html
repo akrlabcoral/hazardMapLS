@@ -7,6 +7,26 @@
   </head>
   <body class="bg-slate-950 text-slate-100 overflow-hidden">
     <div id="root"></div>
+    <div id="error-overlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.8); color: white; padding: 2rem; z-index: 999999; font-family: monospace; display: none; overflow-y: auto;"></div>
+    <script>
+      const originalError = console.error;
+      console.error = function(...args) {
+        const el = document.getElementById('error-overlay');
+        el.style.display = 'block';
+        el.innerHTML += `<p><strong>Console Error:</strong> ${args.map(a => typeof a === 'object' && a?.stack ? a.stack : JSON.stringify(a)).join(' ')}</p>`;
+        originalError.apply(console, args);
+      };
+      window.addEventListener('error', (event) => {
+        const el = document.getElementById('error-overlay');
+        el.style.display = 'block';
+        el.innerHTML += `<p><strong>Window Error:</strong> ${event.message}</p><pre>${event.error?.stack || ''}</pre>`;
+      });
+      window.addEventListener('unhandledrejection', (event) => {
+        const el = document.getElementById('error-overlay');
+        el.style.display = 'block';
+        el.innerHTML += `<p><strong>Promise Error:</strong> ${event.reason}</p>`;
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -8,9 +8,13 @@ import ControlPanel from '../components/ControlPanel';
 import { ShieldAlert, Crosshair, RefreshCw, Eye, EyeOff, Building2, Play, Activity } from 'lucide-react';
 import useStore from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
-const RasterLayersPanel = React.lazy(() => import('../components/RasterLayersPanel'));
 import UploadProgressManager from '../components/UploadProgressManager';
 import { useSimulation } from '../hooks/useSimulation';
+import StateHoverTooltip from '../components/StateHoverTooltip';
+import StateAnalysisPanel from '../components/StateAnalysisPanel';
+import { AlertsPanel } from '../panels/AlertsPanel';
+
+const RasterLayersPanel = React.lazy(() => import('../components/RasterLayersPanel'));
 const MLSimulationPanel = React.lazy(() => import('../components/MLSimulationPanel'));
 
 export default function Dashboard() {
@@ -42,6 +46,8 @@ export default function Dashboard() {
         <Sidebar />
         <MapView />
         <MapLegend />
+        <StateHoverTooltip />
+        <StateAnalysisPanel />
         <UploadProgressManager />
 
         {/* Main Content Overlay */}
@@ -66,10 +72,7 @@ export default function Dashboard() {
                 >
                   <ControlPanel title={activeSection.toUpperCase() + ' PANEL'}>
                   {activeSection === 'alerts' && (
-                    <div className="h-full flex flex-col justify-center items-center text-slate-500 italic p-4 text-center">
-                      <ShieldAlert className="w-8 h-8 mb-2 opacity-50" />
-                      <p>No active severe alerts in your sector.</p>
-                    </div>
+                    <AlertsPanel />
                   )}
 
                   {activeSection === 'layers' && (
@@ -136,10 +139,7 @@ export default function Dashboard() {
                   )}
 
                   {activeSection === 'alerts' && (
-                    <div className="h-full flex flex-col justify-center items-center text-slate-500 italic p-4 text-center">
-                      <ShieldAlert className="w-8 h-8 mb-2 opacity-50" />
-                      <p>No active severe alerts in your sector.</p>
-                    </div>
+                    <AlertsPanel />
                   )}
                 </ControlPanel>
               </motion.div>

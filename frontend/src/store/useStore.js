@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BUILT_IN_RASTERS } from '../config/rasterRegistry';
+import { HAZARD_LAYERS } from '../services/layerCapabilities';
 
 const useStore = create((set) => ({
   isSidebarOpen: true,
@@ -20,8 +21,14 @@ const useStore = create((set) => ({
   toggleMapStyle: () => set((state) => ({ mapStyle: state.mapStyle === 'dark' ? 'light' : 'dark' })),
 
   // Earthquake Simulation State
+  isPlacingEpicenter: false,
+  setIsPlacingEpicenter: (val) => set({ isPlacingEpicenter: val }),
+  
   earthquakeEpicenter: null, // { lng, lat }
   setEarthquakeEpicenter: (epicenter) => set({ earthquakeEpicenter: epicenter }),
+  
+  epicenterRegion: null,
+  setEpicenterRegion: (region) => set({ epicenterRegion: region }),
   
   earthquakeMagnitude: 5.0,
   setEarthquakeMagnitude: (magnitude) => set({ earthquakeMagnitude: magnitude }),
@@ -134,7 +141,93 @@ const useStore = create((set) => ({
     mlSimulationData: null,
     mlHeatmapVisible: false,
     mlContoursVisible: false,
+    historicalValidationVisible: false,
   }),
+
+  // ── Landslide Simulation State ─────────────────────────────────────────────
+  landslideType: 'rainfall', // 'rainfall', 'earthquake', 'combined'
+  setLandslideType: (type) => set({ landslideType: type }),
+  
+  rainfallIntensity: 50.0,
+  setRainfallIntensity: (val) => set({ rainfallIntensity: val }),
+  
+  rainfallDuration: 3.0,
+  setRainfallDuration: (val) => set({ rainfallDuration: val }),
+  
+  historicalValidationVisible: false,
+  setHistoricalValidationVisible: (val) => set({ historicalValidationVisible: val }),
+
+  // Advanced GMPE Parameters
+  useCustomGmpe: false,
+  setUseCustomGmpe: (val) => set({ useCustomGmpe: val }),
+  gmpeParams: {
+    c1: 1.35,
+    c2: 0.5,
+    c3: 0.0,
+    c4: -0.005,
+    C: 1.0
+  },
+  updateGmpeParam: (key, value) => set((state) => ({
+    gmpeParams: { ...state.gmpeParams, [key]: value }
+  })),
+  
+  // Modular Hazard Layers state
+  hazardLayers: HAZARD_LAYERS.reduce((acc, layer) => {
+    acc[layer.id] = { active: layer.available, weight: layer.defaultWeight };
+    return acc;
+  }, {}),
+  toggleHazardLayer: (id) => set((state) => ({
+    hazardLayers: {
+      ...state.hazardLayers,
+      [id]: { ...state.hazardLayers[id], active: !state.hazardLayers[id].active }
+    }
+  })),
+  setHazardLayerWeight: (id, weight) => set((state) => ({
+    hazardLayers: {
+      ...state.hazardLayers,
+      [id]: { ...state.hazardLayers[id], weight }
+    }
+  })),
+
+  // State Analysis UI
+  isHoverTooltipEnabled: false,
+  setHoverTooltipEnabled: (val) => set({ isHoverTooltipEnabled: val }),
+  
+  hoveredStateId: null,
+  setHoveredStateId: (id) => set({ hoveredStateId: id }),
+  
+  selectedStateName: null,
+  setSelectedStateName: (name) => set({ selectedStateName: name }),
+  
+  stateIdMapping: null,
+  setStateIdMapping: (mapping) => set({ stateIdMapping: mapping }),
+  
+  mousePos: { x: 0, y: 0 },
+  setMousePos: (pos) => set({ mousePos: pos }),
+
+  // Soil Amplification overlay visibility
+  soilAmpVisible: false,
+  setSoilAmpVisible: (val) => set({ soilAmpVisible: val }),
+
+  // ── Real-Time Live Events ─────────────────────────────────────────
+  liveEvents: [],
+  addLiveEvent: (event) => set((s) => ({
+    liveEvents: [event, ...s.liveEvents].slice(0, 50),
+  })),
+  clearLiveEvents: () => set({ liveEvents: [] }),
+
+  // Alert banner
+  activeAlert: null,
+  setActiveAlert: (event) => set({ activeAlert: event }),
+  dismissAlert: () => set({ activeAlert: null }),
+
+  // WebSocket connection status
+  wsConnected: false,
+  setWsConnected: (val) => set({ wsConnected: val }),
+
+  // Auto-simulation toggle
+  autoSimEnabled: true,
+  setAutoSimEnabled: (val) => set({ autoSimEnabled: val }),
 }));
 
 export default useStore;

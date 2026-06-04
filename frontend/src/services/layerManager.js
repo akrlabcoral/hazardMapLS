@@ -28,6 +28,53 @@ export const LAYER_CONFIGS = {
       }
     ]
   },
+  stateBoundaries: {
+    sourceId: 'state-boundaries-source',
+    dataUrl: 'india_states.geojson',
+    layers: [
+      {
+        id: 'state-boundaries-fill',
+        type: 'fill',
+        source: 'state-boundaries-source',
+        beforeId: 'sim-wb-grid-fill',
+        paint: {
+          'fill-color': '#0ea5e9',
+          'fill-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            0.1, // Slight glow on hover
+            0.0 // Transparent otherwise
+          ]
+        }
+      },
+      {
+        id: 'state-boundaries-line',
+        type: 'line',
+        source: 'state-boundaries-source',
+        beforeId: 'sim-wb-grid-fill',
+        paint: {
+          'line-color': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            '#0ea5e9', // Bright neon blue when hovered
+            '#00d4ff'  // Default cyan
+          ],
+          'line-width': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            3.0,
+            1.5
+          ],
+          'line-opacity': [
+            'case',
+            ['boolean', ['feature-state', 'hover'], false],
+            1.0,
+            0.6
+          ]
+        }
+      }
+    ]
+  },
   hospitals: {
     sourceId: 'hospitals-source',
     dataUrl: 'hospitals.geojson',
