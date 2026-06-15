@@ -79,12 +79,24 @@ export default function LandslideModule() {
           </div>
           
           <div className="mb-3">
-            <span className="text-[10px] text-[#64748b] block mb-2">Severity</span>
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-[#f1f5f9]">
-              <label className="flex items-center gap-2"><input type="checkbox" defaultChecked className="accent-[#00d4ff]" /> Very High</label>
-              <label className="flex items-center gap-2"><input type="checkbox" defaultChecked className="accent-[#00d4ff]" /> High</label>
-              <label className="flex items-center gap-2"><input type="checkbox" defaultChecked className="accent-[#00d4ff]" /> Moderate</label>
-              <label className="flex items-center gap-2"><input type="checkbox" defaultChecked className="accent-[#00d4ff]" /> Low</label>
+            <span className="text-[10px] text-[#64748b] block mb-2">Severity Legend & Filters</span>
+            <div className="flex flex-col gap-2 text-[11px] text-[#f1f5f9]">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" defaultChecked className="accent-[#00d4ff]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]" /> Very High (&gt;0.8)
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" defaultChecked className="accent-[#00d4ff]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#f97316]" /> High (0.6 - 0.8)
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" defaultChecked className="accent-[#00d4ff]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#eab308]" /> Significant (0.4 - 0.6)
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" defaultChecked className="accent-[#00d4ff]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#22c55e]" /> Moderate (0.2 - 0.4)
+              </label>
             </div>
           </div>
 

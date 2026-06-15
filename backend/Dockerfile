@@ -22,5 +22,6 @@ RUN mkdir -p data
 # Expose FastAPI port
 EXPOSE 8000
 
-# Run FastAPI with uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Run FastAPI with a single process. The reload watcher doubles memory during
+# heavy GIS imports and can OOM-kill the container after Docker restarts.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

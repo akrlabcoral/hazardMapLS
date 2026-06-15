@@ -10,12 +10,13 @@ import { ToggleSwitch } from '../components/ui/ToggleSwitch';
 
 const RasterLayersPanel = React.lazy(() => import('../components/RasterLayersPanel'));
 
-const GIS_BOUNDARY_LAYERS = ['indiaBoundary', 'stateBoundaries'];
+const GIS_BOUNDARY_LAYERS = ['indiaBoundary', 'stateBoundaries', 'landslides'];
 const BASE_LAYERS = ['satellite', 'terrain'];
 
 const LAYER_LABELS = {
   indiaBoundary:    'India Boundary',
   stateBoundaries:  'State Boundaries',
+  landslides:       'Historical Landslides',
   satellite:        'Satellite',
   terrain:          'Terrain',
 };

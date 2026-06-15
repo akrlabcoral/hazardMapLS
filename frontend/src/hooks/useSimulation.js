@@ -21,6 +21,9 @@ export function useSimulation() {
     try {
       const gmpeModel = useStore.getState().gmpeModel;
       
+      const abortController = new AbortController();
+      useStore.getState().setCurrentSimAbortController(abortController);
+
       const response = await fetch('/scientific-api/simulate-earthquake', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -30,7 +33,8 @@ export function useSimulation() {
           magnitude: earthquakeMagnitude,
           depth: earthquakeDepth,
           gmpe_model: gmpeModel
-        })
+        }),
+        signal: abortController.signal
       });
 
       if (!response.ok) {
@@ -42,6 +46,10 @@ export function useSimulation() {
       setSimulationResults(geojsonData);
       
     } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('[useSimulation] Fetch aborted by user.');
+        return;
+      }
       console.error('[Sim] Scientific API error:', err);
       setError(err.message);
     } finally {

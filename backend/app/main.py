@@ -89,7 +89,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -101,6 +101,9 @@ app.include_router(events_module.router,  prefix="/api")
 
 from app.landslide import routes as landslide_routes
 app.include_router(landslide_routes.router, prefix="/api/landslide")
+
+from app.heatwave import routes as heatwave_routes
+app.include_router(heatwave_routes.router, prefix="/api/heatwave")
 
 if __name__ == "__main__":
     import uvicorn

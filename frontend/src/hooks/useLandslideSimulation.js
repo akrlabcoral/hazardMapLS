@@ -26,7 +26,13 @@ export function useLandslideSimulation() {
     }
 
     setIsSimulationRunning(true);
-    useStore.setState({ activeAlert: null }); // Clear any previous alerts
+    useStore.setState({
+      activeAlert: null,
+      simulationResults: null,
+      mlSimulationData: null,
+      mlHeatmapVisible: false,
+      mlContoursVisible: false,
+    });
 
     try {
       let endpoint = '';
@@ -49,20 +55,24 @@ export function useLandslideSimulation() {
       } else if (landslideType === 'combined') {
         endpoint = '/api/landslide/simulate/combined';
         payload = {
+          intensity: rainfallIntensity,
+          duration: rainfallDuration,
           magnitude: earthquakeMagnitude,
           depth: earthquakeDepth,
           latitude: earthquakeEpicenter.lat,
           longitude: earthquakeEpicenter.lng,
-          intensity: rainfallIntensity,
-          duration: rainfallDuration
+          gmpe_model: useStore.getState().gmpeModel
         };
       }
 
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-      const response = await fetch(`${backendUrl}${endpoint}`, {
+      const abortController = new AbortController();
+      useStore.getState().setCurrentSimAbortController(abortController);
+
+      const response = await fetch(endpoint.replace('/api', '/scientific-api'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal: abortController.signal
       });
 
       if (!response.ok) {
@@ -75,14 +85,21 @@ export function useLandslideSimulation() {
       }
 
       const data = await response.json();
+      
+      // Restore the accurate backend contour polygons!
       setSimulationResults(data);
       
-      // If validation stats exist and accuracy > 0, we can auto-show them in a panel or alert
-      if (data.validation_stats && data.validation_stats.total_historical_events > 0) {
-        useStore.setState({ historicalValidationVisible: true });
-      }
+      // Explicitly keep the old blocky heatmap layers off for Landslides
+      useStore.getState().setMlHeatmapVisible(false);
+      useStore.getState().setMlContoursVisible(false);
+      
+      // Do not force validation dots on; let the user's GIS toggle handle it.
       
     } catch (err) {
+      if (err.name === 'AbortError') {
+        console.log('[useLandslideSimulation] Simulation fetch aborted by user.');
+        return;
+      }
       console.error('[useLandslideSimulation] Error:', err);
       setActiveAlert({ type: 'error', message: err.message || 'Simulation failed' });
     } finally {

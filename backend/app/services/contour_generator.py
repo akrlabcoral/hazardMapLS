@@ -43,9 +43,11 @@ _GRID_CACHE: dict = {}
 def generate_contour_geojson(
     grid_features: list,
     raw_pga: np.ndarray,
+    levels: list | None = None,
+    colors: list | None = None,
 ) -> dict:
     """
-    Build and return a GeoJSON FeatureCollection of PGA contour polygons.
+    Build and return a GeoJSON FeatureCollection of contour polygons.
 
     Args:
         grid_features : list of GeoJSON feature dicts (centroid_lon / centroid_lat in properties)
@@ -77,6 +79,10 @@ def generate_contour_geojson(
         if new_max > 0 and original_max > 0:
             grid_z *= original_max / new_max
 
+        # Hard-clip any "ghost" signals caused by the blur spreading and scaling near-zero values
+        # 0.01 is imperceptible for PGA (0.01g) and negligible for Risk (1%)
+        grid_z[grid_z < 0.01] = 0.0
+
         # Mask cells outside India boundary
         cache_key = (round(x_min, 2), round(x_max, 2), round(y_min, 2), round(y_max, 2), N)
         if cache_key not in _GRID_CACHE:
@@ -87,15 +93,19 @@ def generate_contour_geojson(
 
         # Dynamic upper bound for the last contour band
         max_val = float(z_vals.max())
-        levels  = PGA_LEVELS + [max(5.0, max_val + 1.0)]
+        
+        active_levels = levels if levels is not None else PGA_LEVELS
+        active_colors = colors if colors is not None else PGA_COLORS
+        
+        final_levels = active_levels + [max(5.0, max_val + 1.0)]
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             fig, ax = plt.subplots(figsize=(8, 8))
             contour = ax.contourf(
                 grid_x, grid_y, grid_z,
-                levels=levels,
-                colors=PGA_COLORS,
+                levels=final_levels,
+                colors=active_colors,
                 extend="max",
             )
             contour_geojson_str = geojsoncontour.contourf_to_geojson(

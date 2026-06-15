@@ -101,8 +101,13 @@ def init_db() -> None:
                     alert_level     TEXT,
                     ingested_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    sim_triggered   SMALLINT DEFAULT 0
+                    sim_triggered   SMALLINT DEFAULT 0,
+                    simulation_id   INTEGER DEFAULT NULL
                 )
+            """)
+            cur.execute("""
+                ALTER TABLE earthquake_events
+                ADD COLUMN IF NOT EXISTS simulation_id INTEGER DEFAULT NULL
             """)
 
             # Deduplication cache (for real-time feed ingestion)
@@ -277,7 +282,7 @@ def mark_event_simulated(event_id: int, sim_id: int) -> None:
             cur.execute(
                 """
                 UPDATE earthquake_events
-                SET sim_triggered = 1, updated_at = NOW(), event_id = %s
+                SET sim_triggered = 1, updated_at = NOW(), simulation_id = %s
                 WHERE id = %s
                 """,
                 (sim_id, event_id),
@@ -302,7 +307,7 @@ def get_recent_events(limit: int = 50) -> list[dict]:
                 """
                 SELECT id, source_id, source, latitude, longitude, depth_km,
                        magnitude, mag_type, origin_time, place, status,
-                       alert_level, ingested_at, sim_triggered
+                       alert_level, ingested_at, sim_triggered, simulation_id
                 FROM earthquake_events
                 ORDER BY origin_time DESC
                 LIMIT %s

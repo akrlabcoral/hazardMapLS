@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Hazard Map Viva Handbook</title>
+<style>
+body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; padding: 40px; max-width: 900px; margin: auto; color: #333; }
+h1, h2, h3 { color: #2c3e50; margin-top: 1.5em; }
+h1 { border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+h2 { border-bottom: 1px solid #eee; padding-bottom: 5px; }
+code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; font-family: Consolas, monospace; }
+pre { background: #f4f4f4; padding: 15px; border-radius: 5px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+th { background-color: #f8f9fa; }
+p { margin-bottom: 15px; }
+strong { color: #2c3e50; }
+</style>
+</head>
+<body>
+<h1>Hazard Map Platform: Comprehensive Project Viva, Interview &amp; Defense Handbook</h1>
+<h2>INTRODUCTION</h2>
+<p>This handbook is designed to prepare you for the final year project viva, external examiner review, technical interviews, and project defense for the <strong>Hazard Map Platform</strong>.</p>
+<p>Each question in the core technical sections follows a structured format:
+1. <strong>Beginner Answer:</strong> A simple, high-level summary.
+2. <strong>Technical Answer:</strong> A detailed, engineering-focused explanation.
+3. <strong>Advanced Answer:</strong> A deep dive involving the underlying math, architecture, or science.
+4. <strong>Follow-up Questions:</strong> What the examiner is likely to ask next.
+5. <strong>Common Mistakes:</strong> What NOT to say.
+6. <strong>Project Relation:</strong> Exactly how this concept is implemented in the Hazard Map project.</p>
+<hr />
+<h2>SECTION 1 — PROJECT OVERVIEW</h2>
+<h3>Q1.1: What is the Hazard Map Platform?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Hazard Map is a web-based dashboard that visualizes and predicts natural disasters like earthquakes, landslides, and heatwaves over India using a map interface.</p>
+<p><strong>Technical Answer:</strong><br />
+It is a full-stack Geographic Information System (GIS) application built with React, FastAPI, and MapLibre GL JS. It simulates hazard impact zones by processing spatial data, running scientific physics equations (like GMPEs for earthquakes), and applying machine learning models for susceptibility mapping. The results are rendered dynamically as GeoJSON layers on the frontend.</p>
+<p><strong>Advanced Answer:</strong><br />
+The platform functions as a highly scalable geospatial simulation pipeline. It separates the presentation layer (React/Zustand state management) from the simulation engine (Python/FastAPI). It ingests raster datasets (DEMs), meteorological data (ERA5 APIs), and live seismic inputs, processing them through vectorized Numpy arrays and scientific libraries. The output is a series of GeoJSON FeatureCollections and Mapbox Vector Tiles (MVTs) dynamically mapped into WebGL-rendered isolines and choropleth polygons.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why did you build it as a web app instead of a desktop QGIS plugin?
+* How does the data flow from the backend to the frontend map?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Calling it just a "website." It is a geospatial simulation engine.
+* Mentioning technologies you didn't use (e.g., saying you used Google Maps API when you actually used MapLibre/Maptiler).</p>
+<p><strong>Project Relation:</strong><br />
+This is the core definition of your entire final year project. </p>
+<hr />
+<h3>Q1.2: What problem does this project solve?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Most hazard maps are static PDF images. If an earthquake happens today, you can't see the impact immediately. Our project solves this by making the map live, interactive, and customizable.</p>
+<p><strong>Technical Answer:</strong><br />
+Traditional disaster management relies on disjointed data sources and static GIS outputs. The Hazard Map Platform bridges the gap between raw scientific data and actionable visual intelligence. It solves the problem of "dynamic hazard interpolation" by allowing users to tweak parameters (like earthquake magnitude or heatwave duration) and instantly see the simulated impact footprint in real-time.</p>
+<p><strong>Advanced Answer:</strong><br />
+The primary scientific gap addressed is the lack of accessible multi-hazard probabilistic and deterministic modeling. For example, the system doesn't just show historical landslides; it models rainfall-induced and seismic-induced landslides by crossing real-time triggers with static susceptibility parameters (Slope, Elevation, Soil). It democratizes complex geospatial computations, removing the need for a GIS analyst to manually run geoprocessing scripts for every new scenario.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Who is the target audience for this platform? (Disaster management authorities, urban planners, researchers).
+* Can it be used for real-time evacuation planning? (Be careful: say it's an educational/simulation tool, as real-time evacuation requires highly certified life-critical systems).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Overpromising. Do not claim it replaces official government warnings. It is a decision-support and simulation tool.</p>
+<p><strong>Project Relation:</strong><br />
+This justifies the "Why" of your project defense.</p>
+<hr />
+<h2>SECTION 2 — EARTHQUAKE SIMULATION</h2>
+<h3>Q2.1: What is the difference between Earthquake Magnitude and Intensity?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Magnitude is the total energy released by the earthquake at its source (measured by the Richter scale). Intensity is how strongly the earthquake is felt at a specific location on the surface (like your house).</p>
+<p><strong>Technical Answer:</strong><br />
+Magnitude is a single, absolute logarithmic value describing the seismic moment (energy) of the rupture, typically measured using the Moment Magnitude Scale (Mw). Intensity is a variable value that decreases as you move further from the epicenter, commonly measured on the Modified Mercalli Intensity (MMI) scale. Intensity depends on magnitude, depth, distance, and local soil conditions.</p>
+<p><strong>Advanced Answer:</strong><br />
+Magnitude $M_w = \frac{2}{3} \log_{10}(M_0) - 10.7$, where $M_0$ is the seismic moment (shear modulus $\times$ fault area $\times$ slip). Intensity, however, is a localized qualitative measure that correlates strongly with Peak Ground Acceleration (PGA) and Peak Ground Velocity (PGV). In hazard modeling, we use Ground Motion Prediction Equations (GMPEs) to mathematically attenuate the central Magnitude into a grid of spatial Intensity (PGA) values.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Can a Magnitude 5 earthquake have a higher local intensity than a Magnitude 7? (Yes, if the Mag 5 is extremely shallow and directly under a city with soft soil).
+* What scale do you use in the project?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Confusing the Richter Scale (which is outdated) with the Moment Magnitude Scale (which modern seismology uses).
+* Stating that an earthquake has "multiple magnitudes." It has one magnitude, but multiple intensities.</p>
+<p><strong>Project Relation:</strong><br />
+In your <code>EarthquakeModule.jsx</code>, the user inputs the <strong>Magnitude</strong> (e.g., 6.5). The backend Python script uses a GMPE to calculate the <strong>Intensity</strong> (PGA) for thousands of grid points across the map, which are then drawn as contour rings.</p>
+<hr />
+<h3>Q2.2: What is PGA (Peak Ground Acceleration)?</h3>
+<p><strong>Beginner Answer:</strong><br />
+PGA is a measure of how hard the ground shakes during an earthquake. It represents the maximum acceleration experienced by the ground.</p>
+<p><strong>Technical Answer:</strong><br />
+Peak Ground Acceleration (PGA) is the maximum absolute value of ground acceleration measured during a seismic event. It is usually expressed in terms of $g$ (acceleration due to gravity, $9.81 m/s^2$) or $cm/s^2$ (Gals). PGA is the standard metric used in earthquake engineering because it directly correlates to the horizontal forces exerted on buildings.</p>
+<p><strong>Advanced Answer:</strong><br />
+In our simulation pipeline, PGA is the output of the Ground Motion Prediction Equation (GMPE). The GMPE calculates PGA as a function of $M_w$ (Moment Magnitude) and $R_{hypo}$ (Hypocentral distance). The raw rock PGA is then multiplied by a soil amplification factor based on the $V_{s30}$ (shear wave velocity in the top 30 meters of soil). A PGA of 0.1g might cause minor damage, while a PGA of 0.6g+ can cause severe structural failure.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How does soil type affect PGA?
+* Why do we map PGA instead of just "distance from epicenter"?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying PGA is the "speed" of the earthquake. It is acceleration, not velocity.
+* Forgetting to mention the unit ($g$).</p>
+<p><strong>Project Relation:</strong><br />
+Your backend simulation <code>simulate_earthquake</code> calculates the PGA for a 50x50 km grid around the epicenter. The <code>MapView</code> then draws isoline contours interpolating these PGA values (e.g., 0.1g, 0.2g rings).</p>
+<hr />
+<h3>Q2.3: How does the Ground Motion Prediction Equation (GMPE) work in your project?</h3>
+<p><strong>Beginner Answer:</strong><br />
+The GMPE is a mathematical formula. It takes the earthquake's size and your distance from the center, and calculates how much the ground will shake where you are. </p>
+<p><strong>Technical Answer:</strong><br />
+We implemented an empirical attenuation relationship. The core idea is that seismic energy dissipates geometrically as it spreads out as a sphere, and is absorbed by the earth's crust (anelastic attenuation). Our GMPE calculates the base intensity (PGA) at the hypocenter based on magnitude, and then logarithmically reduces it based on the 3D hypocentral distance ($R = \sqrt{epicentral_distance^2 + depth^2}$).</p>
+<p><strong>Advanced Answer:</strong><br />
+In <code>gmpe.py</code>, the core attenuation formula likely takes a form similar to: 
+$\ln(PGA) = c_1 + c_2 \cdot M - c_3 \cdot \ln(R_{hypo} + c_4 \cdot e^{c_5 \cdot M})$
+By calculating this over a spatial matrix (NumPy grid of latitudes and longitudes converted to Haversine distances), the backend rapidly generates a scalar field of PGA values. We then overlay a $V_{s30}$ soil site classification grid to apply amplification factors (e.g., soft soil amplifies low-frequency waves, resulting in higher surface PGA).</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Did you use a standard global GMPE like Boore-Atkinson, or a simplified one?
+* How do you calculate the distance between the epicenter and the grid points? (Haversine formula).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Claiming the GMPE is a Machine Learning model. It is an empirical physics equation derived from historical regression, not a neural network.</p>
+<p><strong>Project Relation:</strong><br />
+The GMPE is the absolute heart of the Earthquake simulation backend. It allows the system to instantly generate realistic shockwave rings for a hypothetical earthquake of any magnitude anywhere on the map.</p>
+<hr />
+<h3>Q2.4: What is the difference between Epicenter and Hypocenter?</h3>
+<p><strong>Beginner Answer:</strong><br />
+The hypocenter is the exact point deep underground where the earthquake starts. The epicenter is the point on the Earth's surface directly above the hypocenter.</p>
+<p><strong>Technical Answer:</strong><br />
+The hypocenter (or focus) is the 3D coordinate (latitude, longitude, depth) of the initial rupture on the fault plane. The epicenter is the 2D projection (latitude, longitude) of the hypocenter onto the Earth's surface. </p>
+<p><strong>Advanced Answer:</strong><br />
+In our GMPE calculations, using only epicentral distance leads to massive overestimations of PGA directly above the earthquake, especially for deep earthquakes. Therefore, we calculate the hypocentral distance $R_{hypo} = \sqrt{R_{epi}^2 + Z^2}$, where $Z$ is the focal depth. A magnitude 6.0 earthquake at 10km depth will have a devastating epicentral PGA, whereas the same magnitude at 100km depth will be felt broadly but with much lower peak intensity at the surface.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How does depth affect surface damage?
+* How does the user input depth in your project?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Swapping the definitions of epicenter and hypocenter.
+* Forgetting that depth ($Z$) is required to calculate true distance.</p>
+<p><strong>Project Relation:</strong><br />
+When the user drops a pin on the map, they are defining the <strong>Epicenter</strong>. The sidebar slider where they select "Depth (km)" defines the Z-axis, completing the <strong>Hypocenter</strong> coordinate required for the backend physics engine.</p>
+<h2>SECTION 3 — LANDSLIDE SIMULATION</h2>
+<h3>Q3.1: What is the difference between Hazard, Susceptibility, and Risk?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Susceptibility is how likely an area is to have a landslide because of its terrain (steepness, soil). Hazard is when a specific trigger (like heavy rain or an earthquake) makes that landslide happen. Risk is the actual damage it causes to people and buildings.</p>
+<p><strong>Technical Answer:</strong><br />
+<em>   </em><em>Susceptibility:</em><em> The intrinsic spatial probability of a landslide occurring based solely on pre-conditioning factors (Slope, Elevation, Aspect, Lithology, Land Cover). It does not factor in time or triggers.
+*   </em><em>Hazard:</em><em> The spatio-temporal probability of a landslide occurring. It is Susceptibility combined with a triggering factor (dynamic variables like Rainfall intensity or Seismic PGA) over a specific time period.
+*   </em><em>Risk:</em>* The intersection of Hazard, Exposure (population, infrastructure in the area), and Vulnerability. $Risk = Hazard \times Exposure \times Vulnerability$.</p>
+<p><strong>Advanced Answer:</strong><br />
+In our architecture, the Machine Learning model (Random Forest) calculates <em>Susceptibility</em> by learning the non-linear relationships between the static DEM derivatives and historical landslide inventories. However, the backend simulation engine calculates <em>Hazard</em>. When the user inputs 50mm/day of rainfall, the backend dynamically modifies the base susceptibility weights using infinite slope stability models or heuristic overlays to generate a real-time hazard index, which is what is finally rendered on the Mapbox GL JS frontend.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Does your platform calculate Risk or just Hazard? (Answer: We calculate Hazard, but the Heatwave module touches upon Risk by showing "Population at Risk" statistics).
+* How did you obtain the historical landslide inventory?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Using Hazard and Risk interchangeably. In geospatial science, they are strictly distinct concepts.</p>
+<p><strong>Project Relation:</strong><br />
+The Landslide module explicitly allows the user to switch between static Susceptibility (the base map) and dynamic Hazard (triggered by the Rainfall or Seismic sliders).</p>
+<hr />
+<h3>Q3.2: How does rainfall trigger a landslide?</h3>
+<p><strong>Beginner Answer:</strong><br />
+When it rains heavily, water seeps into the soil. The water makes the soil heavy and acts as a lubricant, causing the dirt to slide down the steep slope.</p>
+<p><strong>Technical Answer:</strong><br />
+Rainfall triggers landslides primarily by altering the pore water pressure within the soil mantle. As soil becomes saturated, the water pressure pushes the soil particles apart, decreasing the effective normal stress and the internal friction (shear strength) of the soil. Once the shear stress (gravity pulling down) exceeds the shear strength, failure occurs.</p>
+<p><strong>Advanced Answer:</strong><br />
+According to the Infinite Slope Stability Model, the Factor of Safety (FoS) is defined as the ratio of shear strength ($\tau_f$) to shear stress ($\tau_d$). 
+$FoS = \frac{c' + (\gamma z \cos^2\beta - u)\tan \phi'}{\gamma z \sin\beta \cos\beta}$
+Where $u$ is the pore water pressure. Intense rainfall rapidly increases $u$, which directly decreases the numerator (resisting forces). If FoS drops below 1.0, the slope fails. In our simulation, the rainfall parameter dynamically degrades the stability threshold of grid cells with high slope and low cohesion.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why does duration matter as much as intensity? (Because deep-seated landslides require prolonged rainfall to saturate the deep slip surfaces, while shallow debris flows can be triggered by short, intense bursts).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying the water "washes away" the soil. That is erosion, not a landslide. A landslide is a mass wasting failure due to loss of shear strength.</p>
+<p><strong>Project Relation:</strong><br />
+The Landslide module has a "Rainfall" trigger tab where users input Intensity (mm/day) and Duration (days). The backend uses these as multipliers against the slope and soil arrays to calculate the final hazard probability.</p>
+<hr />
+<h3>Q3.3: How do earthquakes induce landslides (Seismic Landslides)?</h3>
+<p><strong>Beginner Answer:</strong><br />
+The violent shaking of an earthquake can loosen the soil and rock on a mountain. If the shaking is hard enough, the mountain face breaks and falls.</p>
+<p><strong>Technical Answer:</strong><br />
+Earthquake-induced landslides occur due to seismic loading. The passage of seismic waves adds temporary dynamic shear stresses to the slope. If these transient stresses, when added to the existing static gravitational shear stress, exceed the shear strength of the rock or soil mass, it yields and begins to displace.</p>
+<p><strong>Advanced Answer:</strong><br />
+In probabilistic seismic landslide hazard analysis, we often use the Newmark Sliding Block model. The earthquake generates a Peak Ground Acceleration (PGA). A slope has a critical yield acceleration ($a_c$)—the minimum horizontal acceleration required to overcome its friction and cohesion. If $PGA &gt; a_c$, the block accumulates displacement. In our multi-hazard pipeline, we intersect the PGA grid generated by the Earthquake GMPE with the Slope and Lithology grids. High PGA on a &gt;30° slope with soft lithology immediately results in a near 1.0 landslide hazard probability.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Does your platform allow simultaneous earthquake and rainfall triggers?
+* What is liquefaction?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Failing to connect the Earthquake module to the Landslide module during the explanation.</p>
+<p><strong>Project Relation:</strong><br />
+The Landslide module has a "Combined" or "Seismic" trigger tab. Under the hood, this integrates the PGA arrays calculated by the earthquake physics engine directly into the landslide hazard matrix.</p>
+<hr />
+<h2>SECTION 4 — HEATWAVE MODULE</h2>
+<h3>Q4.1: What is a Heatwave and what are the IMD criteria?</h3>
+<p><strong>Beginner Answer:</strong><br />
+A heatwave is a period of abnormally hot weather. In India, it's not a heatwave just because it's hot; it has to be significantly hotter than what is normal for that specific region.</p>
+<p><strong>Technical Answer:</strong><br />
+A heatwave is defined by the Indian Meteorological Department (IMD) based on temperature thresholds and anomalies from historical normals. The criteria for plains include:
+1. Normal maximum temperature must reach at least 40°C.
+2. Anomaly Criteria: 
+   - <strong>Heatwave:</strong> Departure from normal is 4.5°C to 6.4°C.
+   - <strong>Severe Heatwave:</strong> Departure from normal is &gt; 6.4°C.
+3. Absolute Criteria: If the absolute max temperature crosses 45°C, it's a heatwave regardless of the anomaly. If it crosses 47°C, it's a severe heatwave.</p>
+<p><strong>Advanced Answer:</strong><br />
+Beyond the dry-bulb temperature IMD criteria, human survivability is heavily dependent on humidity. Therefore, our system computes the <strong>Wet-Bulb Globe Temperature (WBGT)</strong> using Stull's empirical formula. WBGT incorporates temperature, humidity, wind, and solar radiation. If WBGT exceeds 35°C, the human body can no longer cool itself via perspiration, leading to fatal hyperthermia. We classify this as an "Extreme Heatwave" risk layer, assigning it the maximum hazard score (1.0).</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why does 40°C in Rajasthan feel different from 40°C in Mumbai? (Humidity).
+* How did you calculate the historical normals for the anomaly?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Stating a fixed temperature (e.g., "Anything above 40 is a heatwave"). A 40°C day in Rajasthan in May might be normal, but a 40°C day in Shimla is a severe heatwave.</p>
+<p><strong>Project Relation:</strong><br />
+Our Python backend (<code>heatwave_classification.py</code>) programmatically evaluates both the IMD Anomaly rules and the WBGT lethality rules to map the entire country onto a 0.0 to 1.0 risk scale, mapped to green, yellow, orange, and red choropleth polygons.</p>
+<hr />
+<h3>Q4.2: What is the Urban Heat Island (UHI) effect?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Cities are hotter than surrounding rural areas because concrete and asphalt absorb the sun's heat, and there are fewer trees to provide shade and cool the air.</p>
+<p><strong>Technical Answer:</strong><br />
+The Urban Heat Island (UHI) effect is a microclimatic phenomenon where urban areas experience significantly higher temperatures than adjacent rural areas. This is driven by low albedo surfaces (dark asphalt/concrete) absorbing shortwave solar radiation and re-emitting it as longwave thermal radiation, combined with a lack of evapotranspiration due to low vegetation cover.</p>
+<p><strong>Advanced Answer:</strong><br />
+In our simulation, enabling the UHI toggle applies a spatial penalty matrix to the interpolated weather grid. We utilize population density or land-cover classifications as a proxy for urbanization. If a grid cell intersects an urban center (like Delhi or Mumbai), the engine artificially inflates the localized dry-bulb temperature by $1.5^\circ C - 3^\circ C$ and slightly alters the relative humidity. This demonstrates how urban planners can use the tool to simulate micro-climatic vulnerabilities.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How can a city mitigate UHI?
+* Does your system use actual satellite thermal data or a heuristic algorithm for UHI?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Confusing UHI with Global Warming. Global warming is a macro-climate trend; UHI is a localized micro-climate phenomenon.</p>
+<p><strong>Project Relation:</strong><br />
+The Heatwave UI features a distinct "Urban Heat Island (UHI)" toggle. When enabled, the Python backend applies the UHI heuristic multiplier to the spatial temperature arrays before running the IMD classification.</p>
+<hr />
+<h2>SECTION 5 — GIS FUNDAMENTALS</h2>
+<h3>Q5.1: What is the difference between Vector and Raster data?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Vector data uses points, lines, and shapes (like polygons) to draw things, like a country border or a road. Raster data uses a grid of square pixels, like a digital photograph, where each pixel has a value (like elevation or color).</p>
+<p><strong>Technical Answer:</strong><br />
+<em>   </em><em>Vector Data:</em><em> Represents discrete geographical features using geometry (Points, LineStrings, Polygons) and coordinates. It is highly scalable, lightweight for boundaries, and stores attributes in tabular format. Formats: GeoJSON, Shapefile.
+*   </em><em>Raster Data:</em>* Represents continuous geographical surfaces using a matrix of cells (pixels). Each cell holds a numeric value representing a specific variable (e.g., elevation in a DEM, or temperature). Formats: GeoTIFF, NetCDF.</p>
+<p><strong>Advanced Answer:</strong><br />
+In web GIS, rendering large rasters directly on the client (browser) is extremely computationally expensive. Therefore, our architecture processes massive Rasters (like the 30m DEM) on the backend using Python libraries like <code>rasterio</code> and <code>numpy</code>. The backend converts the continuous raster data into discrete vector outputs (like GeoJSON isolines or choropleth polygons) because vector data can be easily rendered and styled via WebGL in MapLibre GL JS without crashing the browser.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Is a DEM raster or vector? (Raster).
+* What is GeoJSON?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying vectors are "better" than rasters. They serve different purposes (vectors for discrete features, rasters for continuous fields).</p>
+<p><strong>Project Relation:</strong><br />
+Our machine learning pipeline uses Raster data (GeoTIFF DEMs), but our backend converts the simulation results into Vector data (<code>FeatureCollections</code>) so the React frontend can quickly draw them as contour lines.</p>
+<hr />
+<h3>Q5.2: What is a Coordinate Reference System (CRS) and WGS84?</h3>
+<p><strong>Beginner Answer:</strong><br />
+The Earth is a 3D sphere, but our screens are flat 2D rectangles. A CRS is a mathematical formula that translates a point on the 3D earth into 2D coordinates (X and Y) so we can map it.</p>
+<p><strong>Technical Answer:</strong><br />
+A Coordinate Reference System defines how spatial data relates to the earth's surface. It consists of a datum (the model of the earth's shape) and a projection (how to flatten it). <strong>WGS84 (EPSG:4326)</strong> is the standard geographic coordinate system used by GPS, representing locations as degrees of Latitude and Longitude.</p>
+<p><strong>Advanced Answer:</strong><br />
+Web maps (like Mapbox, MapLibre, Google Maps) store coordinates in EPSG:4326 (WGS84) but render them on the screen using <strong>Web Mercator (EPSG:3857)</strong>, a projected coordinate system measured in meters. The Mercator projection severely distorts area near the poles (making Greenland look huge). In our backend physics engines (like the GMPE), calculating distances using raw degrees is inaccurate due to Earth's curvature. We must use the Haversine formula (for spherical distance) or project the coordinates into a local UTM zone to perform accurate metric distance calculations (like calculating exact distance to an epicenter).</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why does Greenland look so big on Google Maps?
+* What happens if your backend uses EPSG:3857 but your frontend expects EPSG:4326? (The points will render in the ocean off the coast of Africa at 0,0).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Confusing geographic systems (measured in degrees) with projected systems (measured in meters).</p>
+<p><strong>Project Relation:</strong><br />
+All JSON requests between our React frontend and FastAPI backend transmit coordinates in <code>EPSG:4326</code> (lng/lat arrays). The MapLibre engine automatically projects them to Web Mercator for screen rendering.</p>
+<h2>SECTION 6 — DEM PROCESSING</h2>
+<h3>Q6.1: What is a DEM and why is it used?</h3>
+<p><strong>Beginner Answer:</strong><br />
+A DEM (Digital Elevation Model) is a 3D digital map of the earth's surface. We use it to know how high every point on the map is, which helps us calculate how steep a mountain is.</p>
+<p><strong>Technical Answer:</strong><br />
+A DEM is a specialized raster grid where each pixel value represents the bare-earth elevation above a reference geoid (sea level). In geospatial analysis, DEMs are the foundational datasets for generating geomorphological derivatives like Slope (rate of change of elevation), Aspect (direction of slope), and Curvature. </p>
+<p><strong>Advanced Answer:</strong><br />
+In our pipeline, we process DEM GeoTIFFs to calculate topographic variables for the Landslide Machine Learning model. Calculating slope dynamically on the frontend WebGL client for 20 million pixels is impossible. Instead, we precompute the spatial derivatives using GDAL/Rasterio on the backend. A 3x3 pixel moving window (Sobel operator) is applied across the DEM matrix to calculate the partial derivatives in the X and Y directions ($\frac{dz}{dx}$ and $\frac{dz}{dy}$), yielding the slope angle: $\text{Slope} = \arctan(\sqrt{(\frac{dz}{dx})^2 + (\frac{dz}{dy})^2})$.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Did you use SRTM, ASTER, or Copernicus DEM? What is the spatial resolution?
+* What is the difference between a DEM, DSM (Digital Surface Model), and DTM (Digital Terrain Model)?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Confusing a DEM with a standard image. A DEM pixel value is a float representing altitude in meters, not an RGB color.</p>
+<p><strong>Project Relation:</strong><br />
+The DEM was crucial for creating the base static landslide susceptibility map. Without the DEM, we would have no slope data, and without slope data, we cannot model gravity-driven mass wasting (landslides).</p>
+<hr />
+<h2>SECTION 7 — MACHINE LEARNING</h2>
+<h3>Q7.1: Why did you choose Random Forest over Deep Learning for Susceptibility Mapping?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Random Forest is faster, requires less data, and explains its decisions better than Deep Learning.</p>
+<p><strong>Technical Answer:</strong><br />
+Random Forest (RF) is an ensemble learning method that constructs a multitude of decision trees at training time. For geospatial susceptibility mapping (tabular raster pixel data), tree-based models like RF and XGBoost consistently outperform neural networks. Deep Learning (CNNs/UNet) is excellent for spatial context (image segmentation), but for pixel-wise classification of heterogeneous tabular features (Slope, Lithology, Soil Moisture), Random Forest avoids severe overfitting and requires drastically less hyperparameter tuning.</p>
+<p><strong>Advanced Answer:</strong><br />
+The primary driver for choosing Random Forest was <strong>Interpretability</strong> and <strong>Feature Importance</strong>. In disaster management, black-box models are a liability. Using the Gini Impurity decrease, RF provides a deterministic ranking of which variables drive landslides (e.g., Slope contributes 45%, Lithology 20%). Furthermore, RF easily handles non-linear interactions without needing feature scaling, unlike multi-layer perceptrons. It partitions the spatial feature space into hyper-rectangles, making it robust to the highly imbalanced nature of landslide inventories (where non-landslide pixels outnumber landslide pixels 10,000 to 1).</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How did you handle the class imbalance in the training data? (Answer: SMOTE, or undersampling the majority class).
+* What was your validation strategy? (Spatial Cross-Validation to prevent data leakage).</p>
+<p><strong>Common Mistakes:</strong><br />
+<em> Saying "Deep Learning is better but I didn't know how to use it." Own the architectural decision. Tree-based models </em>are* mathematically superior for tabular pixel-wise classification.</p>
+<p><strong>Project Relation:</strong><br />
+The RF model was trained offline using historical data. The resulting weights and trained model binaries (<code>.pkl</code>) are used by the backend to generate the static base Susceptibility matrix.</p>
+<hr />
+<h2>SECTION 8 — DATA SOURCES</h2>
+<h3>Q8.1: Where did you get the data and how did you validate it?</h3>
+<p><strong>Beginner Answer:</strong><br />
+We used data from global scientific organizations like NASA for elevation, ERA5 for climate normals, and live weather APIs for current conditions.</p>
+<p><strong>Technical Answer:</strong><br />
+<em>   </em><em>Elevation (DEM):</em><em> SRTM or Copernicus 30m resolution datasets accessed via EarthExplorer.
+*   </em><em>Meteorology (Historical):</em><em> ERA5 Reanalysis data (ECMWF) provided decades of hourly temperature and humidity data to construct the baseline climate normals for the Heatwave anomaly calculations.
+*   </em><em>Meteorology (Live):</em><em> Open-Meteo API for real-time and 5-day forecast ingestion.
+*   </em><em>Seismic/Landslide:</em>* USGS Earthquake catalogs and Geological Survey of India (GSI) landslide inventories.</p>
+<p><strong>Advanced Answer:</strong><br />
+Data validation was critical, especially ensuring coordinate alignment across multiple raster projections. The ERA5 dataset is provided in a coarse NetCDF grid (e.g., 0.25° x 0.25°). To fuse this with a 30m DEM, we had to perform spatial resampling (Bilinear interpolation for continuous variables like temperature, Nearest Neighbor for categorical variables like Lithology). We validated the ERA5 historical normals by cross-referencing against available IMD station observational records to ensure the anomaly thresholds were statistically sound for the Indian subcontinent.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why didn't you use IMD APIs directly? (IMD APIs are notoriously rate-limited, difficult to scrape, and lack consistent gridded historical archives for free access compared to ERA5).
+* What is a NetCDF file?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Claiming you gathered the data yourself. Be clear that you are aggregating, cleaning, and fusing secondary datasets.</p>
+<p><strong>Project Relation:</strong><br />
+The entire platform is a data-fusion engine. The pipeline scripts in the backend exist purely to download, standardize, and cache these diverse datasets into a unified 2D grid matrix.</p>
+<hr />
+<h2>SECTION 9 — FRONTEND (REACT)</h2>
+<h3>Q9.1: Why did you use React and Zustand for the Frontend?</h3>
+<p><strong>Beginner Answer:</strong><br />
+React makes it easy to build interactive user interfaces by breaking the screen into reusable components. Zustand helps us share data (like the map coordinates) between all those different components.</p>
+<p><strong>Technical Answer:</strong><br />
+We chose React (via Vite) for its component-based architecture and efficient Virtual DOM rendering. For state management, Redux was deemed too boilerplate-heavy. We selected Zustand because it provides a lightweight, unopinionated, hooks-based global store. This is critical in a GIS application where the sidebar UI (triggers, sliders) needs to instantly mutate state that is deeply buried inside the Mapbox WebGL component.</p>
+<p><strong>Advanced Answer:</strong><br />
+The Hazard Map frontend architecture requires high-frequency state updates without triggering cascading re-renders that would crash the WebGL map context. By using Zustand, we can utilize transient updates (subscribing to state changes without re-rendering the component) or selective selectors (<code>const pga = useStore(state =&gt; state.pga)</code>). Furthermore, React allows us to encapsulate complex MapLibre layer management logic inside custom hooks (<code>useSimulation.js</code>), ensuring a clean separation between UI components and asynchronous WebGL imperative commands.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why MapLibre over Google Maps? (Google Maps is extremely limited and expensive for rendering complex dynamic GeoJSON heatmaps. MapLibre is open-source WebGL).
+* What is the Virtual DOM?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying "React is faster than plain HTML." It's not. React is used for maintainability and complex state syncing, not pure raw rendering speed.</p>
+<p><strong>Project Relation:</strong><br />
+The frontend is structurally divided into UI Modules (<code>HeatwaveModule.jsx</code>) and the Map Renderer (<code>MapView.jsx</code>). Zustand (<code>useStore.js</code>) acts as the central nervous system connecting them.</p>
+<hr />
+<h2>SECTION 10 — BACKEND (FASTAPI)</h2>
+<h3>Q10.1: Why FastAPI instead of Django or Node.js?</h3>
+<p><strong>Beginner Answer:</strong><br />
+FastAPI is a Python web framework that is incredibly fast. Since all our science and math formulas (like the earthquake physics) are written in Python, FastAPI was the perfect choice to serve them.</p>
+<p><strong>Technical Answer:</strong><br />
+FastAPI provides high-performance asynchronous execution natively via ASGI (Starlette) and automatic data validation via Pydantic. Node.js is great for I/O, but terrible for CPU-bound tasks like geospatial matrix multiplication. Django is too heavy and monolithic for an API-only microservice. FastAPI gave us the speed of Node.js combined with the vast scientific ecosystem of Python (NumPy, SciPy, Rasterio).</p>
+<p><strong>Advanced Answer:</strong><br />
+In our hazard simulations, an endpoint might need to parse an incoming JSON payload, perform a spatial query, run a GMPE over a 10,000-cell NumPy array, interpolate the results, and serialize it back to GeoJSON. FastAPI handles the async HTTP request non-blockingly, while NumPy releases the Global Interpreter Lock (GIL) under the hood to crunch the C-compiled math arrays. Pydantic ensures that the complex multi-hazard payload structures are strictly typed and validated before they ever touch the physics engine, preventing fatal runtime exceptions in the matrix operations.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What is ASGI vs WSGI?
+* How do you handle long-running simulations? (Answer: Currently synchronously if they are fast enough via NumPy optimization, but Celery/Redis would be used for multi-minute jobs).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying "FastAPI makes Python run faster." FastAPI is fast for routing and I/O; the actual math speed comes from NumPy/C bindings.</p>
+<p><strong>Project Relation:</strong><br />
+The entire <code>backend/app/api/endpoints</code> directory relies on FastAPI routes. When the user clicks "Run Sim", a POST request hits FastAPI, which delegates the CPU-bound task to the <code>services</code> layer, and returns the resulting GeoJSON.</p>
+<hr />
+<h2>SECTION 11 — DATABASE</h2>
+<h3>Q11.1: What database is used, and what is PostGIS?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Currently, we store our static data in flat files (like JSON and GeoTIFF). In the future, we would use a spatial database called PostgreSQL with PostGIS to query the map data much faster.</p>
+<p><strong>Technical Answer:</strong><br />
+Our current prototype relies heavily on in-memory operations using Pandas/NumPy and caching GeoJSON responses. For a production-scale system, the architecture mandates PostgreSQL extended with the PostGIS extension. PostGIS adds native spatial types (Geometry, Geography) and spatial indexing (R-Tree / GiST).</p>
+<p><strong>Advanced Answer:</strong><br />
+Without PostGIS, finding which hazard grid cells intersect a specific state boundary requires loading all polygons into memory and running a computational geometry algorithm (like Ray Casting) in Python. With PostGIS, you can execute a highly optimized SQL query using <code>ST_Intersects()</code>. The GiST (Generalized Search Tree) index mathematically bounds polygons into boxes (Bounding Box), allowing the database engine to prune millions of irrelevant rows in milliseconds before doing the exact geometry check, drastically reducing API latency.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What is the difference between Geometry and Geography in PostGIS? (Geometry uses a flat cartesian plane; Geography calculates on a sphere/spheroid).
+* Why are you using flat files right now? (Prototyping speed and avoiding complex database container setups during initial development).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Assuming MongoDB is good for this. While MongoDB supports GeoJSON, its spatial querying capabilities are vastly inferior to PostGIS for complex polygon intersections.</p>
+<p><strong>Project Relation:</strong><br />
+While not fully implemented, discussing PostGIS shows the examiners that you understand how to scale this prototype into an enterprise-grade system.</p>
+<hr />
+<h2>SECTION 12 — DOCKER</h2>
+<h3>Q12.1: Why is Docker necessary for this project?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Docker packages our entire project (React, Python, libraries) into a box. This ensures that if the code runs on my laptop, it will run exactly the same way on the examiner's laptop or a cloud server.</p>
+<p><strong>Technical Answer:</strong><br />
+Docker uses containerization to isolate the application environment from the host operating system. A <code>Dockerfile</code> defines the exact OS dependencies, Python versions, and pip packages needed. This prevents the classic "it works on my machine" problem, resolving painful cross-platform issues with complex C-based libraries like GDAL and Rasterio, which are notoriously difficult to install on Windows.</p>
+<p><strong>Advanced Answer:</strong><br />
+We utilize <code>docker-compose</code> to orchestrate multiple microservices simultaneously. The <code>docker-compose.yml</code> file defines the networking namespace, allowing the Vite Frontend container to communicate with the FastAPI Backend container internally via hostname resolution (e.g., <code>http://backend:8000</code>) without exposing ports unnecessarily. It also ensures consistent environment variable injection and volume mapping for local development (hot-reloading inside the container via mounted host directories).</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What is the difference between a Container and a Virtual Machine? (Containers share the host OS kernel and are lightweight; VMs have a full guest OS).
+* What is an Image vs a Container? (An Image is the read-only blueprint; a Container is the running instance of that blueprint).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying Docker "makes the code run faster." Docker adds a microscopic layer of overhead; its purpose is consistency, not execution speed.</p>
+<p><strong>Project Relation:</strong><br />
+The project root contains <code>docker-compose.yml</code>, which spins up both the React frontend and the Python backend with a single <code>docker compose up</code> command.</p>
+<h2>SECTION 13 — PROJECT ARCHITECTURE</h2>
+<h3>Q13.1: Can you explain the data flow and system architecture?</h3>
+<p><strong>Beginner Answer:</strong><br />
+When a user clicks "Run Simulation" on the React website, it sends a message to the Python server. The server calculates the hazard math using our pre-downloaded data, creates a map layer (GeoJSON), and sends it back to the website to be drawn on the screen.</p>
+<p><strong>Technical Answer:</strong><br />
+The architecture follows a decoupled client-server model:
+1. <strong>Client (React/Zustand):</strong> The user defines parameters (e.g., Epicenter, Magnitude). The API payload is constructed and dispatched via a REST POST request.
+2. <strong>API Layer (FastAPI):</strong> Receives the payload, validates it using Pydantic, and routes it to the specific Hazard Service.
+3. <strong>Simulation Engine (Python/NumPy):</strong> The service loads static raster derivatives from disk into memory. It applies the dynamic physics models (like the GMPE or infinite slope stability equations) using vectorized matrix operations.
+4. <strong>Geo-Serialization:</strong> The resulting numpy arrays are downsampled and converted into <code>FeatureCollection</code> GeoJSON objects.
+5. <strong>Map Rendering (MapLibre GL JS):</strong> The frontend receives the GeoJSON, updates the <code>useStore</code>, and forces the WebGL canvas to render the new isolines/choropleths.</p>
+<p><strong>Advanced Answer:</strong><br />
+Our architecture diagram looks like this:</p>
+<pre><code>[User Interface (Vite/React)]
+        |
+   (Zustand State)
+        |
+[MapLibre GL JS (WebGL)] &lt;---- (GeoJSON/MVT Update)
+        |                               ^
+        v                               |
+ [REST API Request (JSON)]       [GeoJSON Response]
+        |                               |
+        v                               |
+[FastAPI Router (Pydantic)]             |
+        |                               |
+[Hazard Services (Earthquake, Landslide, Heatwave)]
+        |
+        v
+[NumPy Vectorized Physics Engines (GMPE, Anomaly)]
+        |
+        v
+[Local File Cache (DEM, ERA5, ML Weights, Inventories)]
+</code></pre>
+<p>This stateless architecture allows horizontal scaling of the FastAPI workers. It is highly optimized for memory since we cache the base numerical grids on service startup rather than reloading large GeoTIFFs per request.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Why didn't you use WebSockets instead of REST? (Because our simulations are relatively fast (&lt; 2 seconds) and request-response is sufficient. WebSockets would be needed for real-time streaming).
+* How does the system handle concurrent users?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Drawing or describing an architecture where the database sits in front of the API, or failing to distinguish between the frontend map renderer and the backend physics engine.</p>
+<p><strong>Project Relation:</strong><br />
+Understanding this flow is crucial if the examiner asks you to trace exactly what happens when the "RUN SIM" button is clicked.</p>
+<hr />
+<h2>SECTION 14 — PERFORMANCE OPTIMIZATION</h2>
+<h3>Q14.1: Why don't you render the raw DEM directly on the map?</h3>
+<p><strong>Beginner Answer:</strong><br />
+A DEM file is massive and contains millions of pixels. If we tried to send that whole file to your web browser, your computer would freeze and the website would crash. </p>
+<p><strong>Technical Answer:</strong><br />
+The original Copernicus 30m DEM for India is several gigabytes in size. Browsers possess strict memory limits for DOM and WebGL contexts. Attempting to parse and render a multi-million node GeoJSON or a raw GeoTIFF client-side causes massive memory bloat and frame-rate drops. </p>
+<p><strong>Advanced Answer:</strong><br />
+To solve this, we employed <strong>Server-Side Rendering (Processing)</strong> and <strong>Vectorization</strong>. We never send raster data to the client. The backend performs the heavy numerical computation (the $O(N^2)$ raster math) and then runs contouring algorithms (<code>scipy.interpolate</code> or <code>turf.isolines</code>) to extract only the boundary geometry (the isolines). We effectively compress millions of pixels of data into a few kilobyte Vector features. For static background layers, the optimal solution is generating Mapbox Vector Tiles (MVTs) using tools like <code>tippecanoe</code>, which serve pre-rendered geometric tiles strictly based on the user's viewport and zoom level.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What is <code>tippecanoe</code>? (A tool to build vector tilesets from large GeoJSON files).
+* Why is slope precomputed? (Calculating arctangents over a 20-million cell array on every API request would introduce unacceptable latency).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Claiming you compress the DEM into a JPEG. A JPEG loses the float values (elevation data) needed for mathematical simulation.</p>
+<p><strong>Project Relation:</strong><br />
+The Mapbox GL JS engine strictly consumes the optimized <code>FeatureCollection</code> outputs from the backend, completely shielding the user's browser from the underlying gigabytes of raster data.</p>
+<hr />
+<h2>SECTION 15 — MULTI-HAZARD SYSTEMS</h2>
+<h3>Q15.1: What is a multi-hazard platform, and how do hazards interact in your project?</h3>
+<p><strong>Beginner Answer:</strong><br />
+A multi-hazard platform doesn't just look at one disaster; it looks at many and how they affect each other. For example, an earthquake can cause a landslide. </p>
+<p><strong>Technical Answer:</strong><br />
+A multi-hazard platform integrates distinct natural hazard models into a unified spatial reference system. It analyzes cascading effects (where Hazard A triggers Hazard B) and compounding effects (where Hazard A and B happen simultaneously). In our project, the output of the Earthquake physics engine (PGA) serves as the direct dynamic input for the Landslide susceptibility matrix.</p>
+<p><strong>Advanced Answer:</strong><br />
+In traditional siloed modeling, a seismologist generates an earthquake map, and a geologist generates a landslide map independently. Our platform utilizes a coupled modeling approach. When a user runs a seismic landslide simulation, the FastAPI backend routes the payload to the Earthquake GMPE first. The resulting 2D NumPy array of PGA values is passed in-memory to the Landslide service. The Landslide service calculates Newmark displacements by evaluating if the PGA exceeds the yield acceleration of the precomputed Slope/Lithology grids. This true interoperability is the defining academic novelty of the platform.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* Can heatwaves cause landslides? (Indirectly, by causing severe droughts that kill vegetation, destroying root cohesion, making the slope vulnerable to the next rainfall).
+* How do you handle different spatial resolutions between models? (Resampling to a common reference grid).</p>
+<p><strong>Common Mistakes:</strong><br />
+<em> Explaining a multi-hazard system as just a UI with different tabs. The "multi-hazard" aspect must involve the </em>interaction* of the physics engines.</p>
+<p><strong>Project Relation:</strong><br />
+The "Combined" or "Seismic" tab in the Landslide module is the direct implementation of this multi-hazard cascading logic.</p>
+<hr />
+<h2>SECTION 16 — PROJECT LIMITATIONS</h2>
+<h3>Q16.1: What are the current limitations of your platform?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Our system uses historical data to guess the future, but it isn't connected to live, up-to-the-second weather satellites. Also, our grids are 30-meters wide, so we can't tell you exactly which specific house will fall, only which neighborhood is at risk.</p>
+<p><strong>Technical Answer:</strong><br />
+1. <strong>Resolution Constraints:</strong> The base DEM resolution is 30m. Micro-topographic features smaller than 30m that could critically affect slope stability are ignored.
+2. <strong>Data Latency:</strong> While we use live APIs (Open-Meteo), there is inherent latency and interpolation error when downscaling coarse meteorological data to high-resolution DEM grids.
+3. <strong>Geotechnical Generalization:</strong> Soil thickness and cohesion are largely heuristically mapped based on surface lithology. We lack deep borehole geotechnical data, which is crucial for exact factor-of-safety calculations.
+4. <strong>Deterministic Limitations:</strong> The earthquake GMPE is deterministic. It does not account for complex 3D fault rupture geometries or seismic wave reflection/refraction in sedimentary basins.</p>
+<p><strong>Advanced Answer:</strong><br />
+From a computational perspective, the system performs in-memory NumPy operations which are bound by the single-node RAM capacity. If we attempt to simulate the entire Indian subcontinent at 10m resolution simultaneously, it would trigger an Out-Of-Memory (OOM) exception. The backend lacks horizontal scaling via distributed computing frameworks (like Apache Spark or Dask) necessary for planetary-scale raster algebra.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How would you fix the geotechnical data limitation? (By integrating local municipality soil boring logs).
+* Why didn't you use AWS or Google Earth Engine? (Cost and scope of the academic project).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Saying "There are no limitations, the project is perfect." Recognizing limitations is a critical sign of a mature engineer/researcher. </p>
+<p><strong>Project Relation:</strong><br />
+Examiners love this question. Being honest about the 30m DEM resolution and the lack of deep geotechnical soil data shows scientific integrity.</p>
+<hr />
+<h2>SECTION 17 — FUTURE WORK</h2>
+<h3>Q17.1: How could this project be expanded in the future?</h3>
+<p><strong>Beginner Answer:</strong><br />
+We want to add more disasters like Floods and Cyclones. We also want to make a mobile app so regular people can get push notifications if they walk into a danger zone.</p>
+<p><strong>Technical Answer:</strong><br />
+Future iterations will focus on expanding the hazard portfolio and improving backend infrastructure. We aim to integrate hydrodynamic modeling (like HEC-RAS or LISFLOOD) for fluvial and pluvial flood simulations. Architecturally, we plan to migrate from flat file storage to a robust PostGIS spatial database, allowing for complex spatial joins, such as intersecting the hazard polygons with OpenStreetMap building footprints to calculate exact financial risk.</p>
+<p><strong>Advanced Answer:</strong><br />
+The ultimate roadmap involves transitioning from deterministic physics simulations to real-time Deep Learning emulation. Running complex physical models (like Navier-Stokes for flooding) takes hours. We plan to train Physics-Informed Neural Networks (PINNs) on thousands of precomputed simulation runs. The PINN would then act as a surrogate model, capable of predicting the hazard footprint in milliseconds. Furthermore, we aim to integrate an IoT pipeline, ingesting real-time telemetry from automated weather stations and seismic sensors via MQTT to continuously calibrate the simulation weights in real-time.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* How exactly would you calculate Risk (financial loss) if you added buildings? (Overlay the hazard polygon over building polygons, multiply the building value by the hazard probability and a vulnerability curve).
+* Why are PINNs better than standard Neural Networks for this? (Because they obey the laws of physics, preventing impossible predictions like water flowing uphill).</p>
+<p><strong>Common Mistakes:</strong><br />
+<em> Suggesting "AI" as a magic bullet without explaining </em>what kind<em> of AI or </em>how* it would integrate into the spatial pipeline.</p>
+<p><strong>Project Relation:</strong><br />
+This is your closing statement for a presentation. It shows vision and understanding of enterprise-scale disaster management.</p>
+<h2>SECTION 18 — 200+ VIVA QUESTION BANK</h2>
+<p><em>(Note: These questions are formatted as direct Q&amp;A for rapid study and revision).</em></p>
+<h3>18.1 Basic Questions (50)</h3>
+<ol>
+<li><strong>What is the full form of GIS?</strong> Geographic Information System.</li>
+<li><strong>What is a DEM?</strong> Digital Elevation Model; a 3D representation of terrain.</li>
+<li><strong>What does your project do?</strong> Simulates and visualizes multi-hazard risks (earthquake, landslide, heatwave) dynamically on a map.</li>
+<li><strong>What programming language is the backend written in?</strong> Python.</li>
+<li><strong>What is the frontend framework?</strong> React (using Vite).</li>
+<li><strong>What is a GeoJSON?</strong> A JSON format for encoding geographic data structures (Points, Lines, Polygons).</li>
+<li><strong>What is the difference between latitude and longitude?</strong> Latitude measures North-South; Longitude measures East-West.</li>
+<li><strong>What is an epicenter?</strong> The point on the Earth's surface directly above the earthquake's origin.</li>
+<li><strong>What is a hypocenter?</strong> The actual 3D point underground where the earthquake originates.</li>
+<li><strong>What scale measures earthquake magnitude?</strong> Moment Magnitude Scale ($M_w$).</li>
+<li><strong>What does PGA stand for?</strong> Peak Ground Acceleration.</li>
+<li><strong>What is a landslide?</strong> The downward movement of a mass of rock, earth, or debris down a slope.</li>
+<li><strong>Name one trigger for a landslide.</strong> Heavy rainfall (or earthquake).</li>
+<li><strong>What is a heatwave?</strong> A period of abnormally high temperatures, defined by specific anomalies above historical normals.</li>
+<li><strong>What does IMD stand for?</strong> Indian Meteorological Department.</li>
+<li><strong>What is the UHI effect?</strong> Urban Heat Island effect; cities are hotter than rural areas due to human activities and concrete.</li>
+<li><strong>What does WBGT stand for?</strong> Wet-Bulb Globe Temperature.</li>
+<li><strong>Why is WBGT important?</strong> It accounts for humidity, which affects human survivability during heatwaves.</li>
+<li><strong>What map library did you use?</strong> MapLibre GL JS (or Mapbox GL JS).</li>
+<li><strong>What is an API?</strong> Application Programming Interface; how the frontend talks to the backend.</li>
+<li><strong>What is REST?</strong> Representational State Transfer; a standard architecture for web APIs.</li>
+<li><strong>What framework did you use for the API?</strong> FastAPI.</li>
+<li><strong>What is Docker?</strong> A tool to containerize applications so they run consistently everywhere.</li>
+<li><strong>What is a raster?</strong> A grid of pixels where each pixel has a value (e.g., elevation).</li>
+<li><strong>What is a vector in GIS?</strong> Points, lines, or polygons defining boundaries.</li>
+<li><strong>What is spatial resolution?</strong> The real-world size of one pixel in a raster (e.g., 30m x 30m).</li>
+<li><strong>What resolution is your DEM?</strong> 30 meters.</li>
+<li><strong>What is slope?</strong> The steepness or incline of the terrain.</li>
+<li><strong>What is aspect?</strong> The compass direction that a slope faces.</li>
+<li><strong>What does CRS stand for?</strong> Coordinate Reference System.</li>
+<li><strong>What is WGS84?</strong> The standard global coordinate system used by GPS (EPSG:4326).</li>
+<li><strong>What is Machine Learning?</strong> Algorithms that learn patterns from data instead of being explicitly programmed.</li>
+<li><strong>What ML algorithm did you use?</strong> Random Forest.</li>
+<li><strong>Why Random Forest?</strong> It handles tabular spatial data well and prevents overfitting.</li>
+<li><strong>What is Susceptibility?</strong> The inherent likelihood of a hazard occurring based on static terrain conditions.</li>
+<li><strong>What is Hazard?</strong> Susceptibility combined with a dynamic trigger (like rain).</li>
+<li><strong>What is Risk?</strong> Hazard multiplied by exposure and vulnerability (damage to people/property).</li>
+<li><strong>Where did you get elevation data?</strong> Copernicus/SRTM missions.</li>
+<li><strong>Where did you get climate data?</strong> ERA5 (ECMWF) and Open-Meteo.</li>
+<li><strong>How did you store state in React?</strong> Using Zustand.</li>
+<li><strong>What is an isoline (contour line)?</strong> A line on a map connecting points of equal value (e.g., equal PGA or equal elevation).</li>
+<li><strong>What is a choropleth map?</strong> A map where areas are shaded in proportion to a statistical variable (like heatwave severity).</li>
+<li><strong>What is a frontend component?</strong> A reusable piece of UI code in React.</li>
+<li><strong>What is an HTTP POST request?</strong> A method to send data to a server to create/update a resource (like running a simulation).</li>
+<li><strong>What is JSON?</strong> JavaScript Object Notation; a lightweight data-interchange format.</li>
+<li><strong>What is NumPy?</strong> A Python library for fast array and matrix math.</li>
+<li><strong>What is a topographic map?</strong> A map showing the physical features and elevation of a landscape.</li>
+<li><strong>What is the Richter scale?</strong> An outdated logarithmic scale for earthquake magnitude.</li>
+<li><strong>What is lithology?</strong> The physical characteristics of rocks.</li>
+<li><strong>What does 'open-source' mean?</strong> Software with source code that anyone can inspect, modify, and enhance.</li>
+</ol>
+<h3>18.2 Intermediate Questions (75)</h3>
+<ol>
+<li><strong>Explain the difference between a DEM, DSM, and DTM.</strong> DEM is bare earth. DSM includes buildings and trees. DTM is a DEM augmented with breaklines.</li>
+<li><strong>How do you calculate slope from a DEM?</strong> Using a 3x3 moving window (Sobel operator) to find the rate of change in Z over X and Y.</li>
+<li><strong>What is a GMPE?</strong> Ground Motion Prediction Equation; predicts PGA based on magnitude and distance.</li>
+<li><strong>Why use hypocentral distance instead of epicentral distance?</strong> Epicentral distance ignores depth, which drastically overestimates surface shaking for deep earthquakes.</li>
+<li><strong>How does soil amplification work?</strong> Soft soils ($V_{s30}$) trap and amplify seismic waves, increasing surface PGA compared to hard bedrock.</li>
+<li><strong>What is the Infinite Slope Stability model?</strong> A geotechnical physics model to calculate the Factor of Safety of a slope.</li>
+<li><strong>How does rainfall affect the Factor of Safety?</strong> It increases pore water pressure, which reduces effective stress and soil shear strength.</li>
+<li><strong>What is Newmark Displacement?</strong> A method to estimate how far a slope block will slide during an earthquake.</li>
+<li><strong>Explain the IMD Heatwave criteria.</strong> Base temp &gt; 40°C, and anomaly &gt; 4.5°C (Heatwave) or &gt; 6.4°C (Severe).</li>
+<li><strong>Why is a Wet-Bulb temperature of 35°C fatal?</strong> The human body cannot cool itself via evaporation when the wet-bulb temperature equals skin temperature.</li>
+<li><strong>How do you calculate WBGT?</strong> Using empirical formulas (like Stull's) taking dry-bulb temperature and relative humidity.</li>
+<li><strong>How does the UHI toggle work in your code?</strong> It applies a static positive temperature modifier (+2°C) to grid cells located over known urban areas.</li>
+<li><strong>What is Web Mercator?</strong> EPSG:3857; the projection used by web maps to render a flat map, though it distorts polar areas.</li>
+<li><strong>Why project coordinates from EPSG:4326 to a local UTM?</strong> To calculate accurate metric distances (meters), since degrees of longitude vary in physical length.</li>
+<li><strong>What is the Haversine formula?</strong> Calculates the great-circle distance between two points on a sphere given their longitudes and latitudes.</li>
+<li><strong>What is an ensemble model in ML?</strong> A model that combines multiple weak learners (like decision trees) to create a strong learner (like Random Forest).</li>
+<li><strong>What is Gini Impurity?</strong> A metric used by Random Forest to decide how to split a decision tree node based on class purity.</li>
+<li><strong>What is a multi-hazard system?</strong> A system that models multiple cascading or compounding hazards simultaneously.</li>
+<li><strong>How do you handle cross-origin requests (CORS)?</strong> By configuring the FastAPI CORS middleware or using a Vite development proxy.</li>
+<li><strong>What is Pydantic in FastAPI?</strong> A library for data validation and settings management using Python type annotations.</li>
+<li><strong>What is ASGI?</strong> Asynchronous Server Gateway Interface; standard for Python async web apps, allowing non-blocking I/O.</li>
+<li><strong>How did you optimize the raster rendering?</strong> By not rendering rasters directly; instead, processing them backend into lightweight GeoJSON isolines.</li>
+<li><strong>What is a Mapbox Vector Tile (MVT)?</strong> A highly compressed, tile-based vector format optimized for web rendering.</li>
+<li><strong>Why use Zustand instead of Redux?</strong> Zustand has less boilerplate, no providers, and allows transient updates without forced component re-renders.</li>
+<li><strong>What is a React Hook?</strong> A function that lets you "hook into" React state and lifecycle features (e.g., <code>useState</code>, <code>useEffect</code>).</li>
+<li><strong>How do you generate contour lines from a grid?</strong> Using algorithms like Marching Squares (via <code>scipy.interpolate</code> or <code>turf.isolines</code>).</li>
+<li><strong>What is a choropleth vs an isoline map?</strong> Choropleth colors distinct polygonal boundaries (like states or grid cells); isolines draw continuous contour rings.</li>
+<li><strong>What is SMOTE?</strong> Synthetic Minority Over-sampling Technique; used to balance imbalanced ML datasets.</li>
+<li><strong>Why is landslide data usually imbalanced?</strong> Because 99% of a mountain is stable, and only 1% contains actual landslide events.</li>
+<li><strong>What is an ROC curve?</strong> Receiver Operating Characteristic curve; plots True Positive Rate vs False Positive Rate to evaluate an ML model.</li>
+<li><strong>What is AUC?</strong> Area Under the ROC Curve; a single metric summarizing model performance (0.5 is random, 1.0 is perfect).</li>
+<li><strong>What is Boruta feature selection?</strong> A wrapper algorithm around Random Forest that iteratively compares original features against randomized shadow features to find truly important variables.</li>
+<li><strong>What are the inputs to your Landslide model?</strong> Slope, elevation, aspect, rainfall, lithology, PGA.</li>
+<li><strong>What is the output of your GMPE?</strong> A grid of PGA (Peak Ground Acceleration) values.</li>
+<li><strong>What is spatial resolution vs temporal resolution?</strong> Spatial = pixel size (e.g., 30m). Temporal = how often data is updated (e.g., hourly for ERA5).</li>
+<li><strong>How does ERA5 data differ from satellite imagery?</strong> ERA5 is a reanalysis dataset combining model data with observations globally.</li>
+<li><strong>What is a NetCDF file?</strong> Network Common Data Form; a format for array-oriented scientific data (often mult-dimensional like time, lat, lon).</li>
+<li><strong>How do you read a NetCDF in Python?</strong> Using <code>xarray</code> or <code>netCDF4</code> libraries.</li>
+<li><strong>How do you read a GeoTIFF in Python?</strong> Using <code>rasterio</code> or <code>gdal</code>.</li>
+<li><strong>What is bilinear interpolation?</strong> A resampling method that averages the 4 nearest pixel values, used for continuous data like temperature.</li>
+<li><strong>What is nearest-neighbor interpolation?</strong> A resampling method that assigns the exact value of the closest pixel, used for categorical data like rock type.</li>
+<li><strong>What does a Dockerfile do?</strong> It provides step-by-step instructions to build a Docker image.</li>
+<li><strong>What does docker-compose do?</strong> Orchestrates multiple Docker containers (like backend and frontend) to run together on a shared network.</li>
+<li><strong>How do you pass variables to React at build time?</strong> Using <code>.env</code> files and <code>import.meta.env</code>.</li>
+<li><strong>What is the difference between <code>useEffect</code> and <code>useLayoutEffect</code>?</strong> <code>useEffect</code> runs asynchronously after render; <code>useLayoutEffect</code> runs synchronously before the browser paints.</li>
+<li><strong>How did you test your APIs?</strong> Using Swagger UI (auto-generated by FastAPI) or Postman.</li>
+<li><strong>What HTTP status code is for 'Not Found'?</strong> 404.</li>
+<li><strong>What HTTP status code is for 'Internal Server Error'?</strong> 500.</li>
+<li><strong>How does your map update without refreshing the page?</strong> React updates the DOM/WebGL context reactively when Zustand state changes.</li>
+<li><strong>What is a Web Worker?</strong> A JavaScript script executed in the background, independent of UI scripts, to prevent UI freezing (though your project uses server-side processing instead).</li>
+<li><strong>Why not do all math in the browser using JavaScript?</strong> JS is single-threaded and slow for large matrix math compared to Python's C-compiled NumPy arrays.</li>
+<li><strong>What is the GIL in Python?</strong> Global Interpreter Lock; prevents multiple native threads from executing Python bytecodes at once.</li>
+<li><strong>How does NumPy bypass the GIL?</strong> NumPy operations are written in C and release the GIL during massive array computations.</li>
+<li><strong>What is vectorization in NumPy?</strong> Performing operations on entire arrays at once rather than using slow Python <code>for</code> loops.</li>
+<li><strong>What is the <code>turf.js</code> library?</strong> A spatial analysis library for JavaScript used to manipulate GeoJSON.</li>
+<li><strong>How do you define a bounding box (BBOX)?</strong> By minimum and maximum longitudes and latitudes [minX, minY, maxX, maxY].</li>
+<li><strong>What is a Point vs a Polygon in GeoJSON?</strong> Point is a single coordinate <code>[lon, lat]</code>. Polygon is an array of linear rings <code>[[[lon, lat], ...]]]</code>.</li>
+<li><strong>What is a topological error?</strong> Errors in vector data like overlapping polygons, gaps, or unclosed rings.</li>
+<li><strong>What does it mean to "clip" a raster?</strong> Masking out or deleting all raster pixels outside a specific polygon boundary (like a state border).</li>
+<li><strong>What is a "NoData" value in a raster?</strong> A specific pixel value (e.g., -9999) indicating the absence of valid data.</li>
+<li><strong>Why is it hard to predict earthquakes?</strong> We cannot measure stress buildup deep within the earth's crust accurately enough to predict exact time and magnitude.</li>
+<li><strong>Why do we use deterministic scenarios for earthquakes?</strong> Since we can't predict them, we simulate a specific hypothetical event to prepare for its impact.</li>
+<li><strong>What is probabilistic hazard assessment (PSHA)?</strong> Calculating the statistical probability of exceeding a certain hazard level over a return period (e.g., 50 years).</li>
+<li><strong>What is an active fault?</strong> A geological fault that is likely to become the source of an earthquake in the future.</li>
+<li><strong>How does aspect influence landslides?</strong> Aspect determines sunlight exposure and wind, which affects soil moisture, vegetation density, and weathering rates.</li>
+<li><strong>How does curvature influence landslides?</strong> Concave curvature converges water (increasing pore pressure); convex disperses water.</li>
+<li><strong>What is a slip surface?</strong> The underground boundary plane where a landslide mass separates from the stable ground.</li>
+<li><strong>What is debris flow?</strong> A fast-moving landslide made of water, mud, and rocks.</li>
+<li><strong>What is climate change's effect on heatwaves?</strong> It increases both their frequency and their intensity (pushing the statistical normal distribution curve to the right).</li>
+<li><strong>What is the difference between a forecast and a simulation?</strong> A forecast predicts reality based on current data; a simulation models a hypothetical "what if" scenario.</li>
+<li><strong>How do you update the map when the slider moves?</strong> The slider updates a Zustand state variable, which triggers a <code>useEffect</code> hook in MapView to swap the GeoJSON data source.</li>
+<li><strong>What is the difference between <code>source</code> and <code>layer</code> in Mapbox?</strong> <code>source</code> holds the raw GeoJSON data; <code>layer</code> defines how that data is styled and painted on the screen.</li>
+<li><strong>Why did you use WebGL?</strong> It utilizes the GPU hardware for rendering graphics, allowing smooth rendering of millions of vectors.</li>
+<li><strong>How do you ensure data security in your API?</strong> Through CORS policies, input validation (Pydantic limits), and potentially rate limiting.</li>
+<li><strong>What is the role of <code>vite.config.js</code>?</strong> Configures the Vite build tool, handling plugins, aliases, and local proxying to bypass CORS during development.</li>
+</ol>
+<h3>18.3 Advanced Questions (75)</h3>
+<ol>
+<li><strong>Explain the math behind the Newmark Sliding Block model.</strong> It calculates cumulative displacement by double-integrating the acceleration time-history whenever the input acceleration exceeds the critical yield acceleration ($a_c$) of the slope.</li>
+<li><strong>Derive the Factor of Safety for an infinite slope.</strong> $FoS = \frac{\text{Resisting Forces}}{\text{Driving Forces}} = \frac{c' + (\gamma z \cos^2\beta - u)\tan \phi'}{\gamma z \sin\beta \cos\beta}$.</li>
+<li><strong>How does the spatial resolution of a DEM affect slope accuracy?</strong> Coarse DEMs (e.g., 90m) artificially flatten the terrain, underestimating slope angles and thus underestimating landslide susceptibility.</li>
+<li><strong>What is the Modifiable Areal Unit Problem (MAUP)?</strong> A statistical bias occurring when point-based measures are aggregated into geographic districts; changing district boundaries changes the statistical results.</li>
+<li><strong>How did you solve the OOM (Out of Memory) issue with large NumPy arrays?</strong> By processing in blocks, using <code>dtype=float32</code> instead of <code>float64</code>, or downsampling the grid dynamically based on the requested BBOX.</li>
+<li><strong>Explain the difference between a Decision Tree and a Random Forest.</strong> A DT is a single tree prone to overfitting. RF is an ensemble of many DTs trained on bootstrapped data subsets (bagging) that output the majority vote.</li>
+<li><strong>What is spatial autocorrelation in ML?</strong> The phenomenon where data points close to each other are more similar than distant ones (Tobler's First Law). It violates the Independent and Identically Distributed (I.I.D) assumption in standard ML.</li>
+<li><strong>How do you account for spatial autocorrelation in train/test splitting?</strong> By using Spatial Block Cross-Validation (splitting by geographic tiles) rather than random K-Fold split.</li>
+<li><strong>What is the role of the focal mechanism in an earthquake?</strong> It defines the orientation of the fault and the direction of slip (strike-slip, normal, reverse), affecting the radiation pattern of seismic waves. Does your GMPE account for it?</li>
+<li><strong>Explain the mathematical concept of Convolution in GIS.</strong> Applying a filter matrix (kernel) across a raster to calculate moving window operations, like the Sobel filter for slope calculation.</li>
+<li><strong>What is the difference between GDAL and Rasterio?</strong> Rasterio is a more Pythonic, idiomatic wrapper around the foundational C/C++ GDAL library.</li>
+<li><strong>How does a GiST index work in PostGIS?</strong> It uses R-Trees (bounding boxes) to rapidly rule out geometries that definitely don't intersect, before doing exact, slow computational geometry on the remaining candidates.</li>
+<li><strong>Write the SQL to find all landslides inside a state.</strong> <code>SELECT l.* FROM landslides l JOIN states s ON ST_Intersects(l.geom, s.geom) WHERE s.name = 'StateName';</code></li>
+<li><strong>How would you implement real-time streaming of earthquake data?</strong> Connect to the USGS WebSocket or Kafka stream, push updates to the React client via Socket.io or Server-Sent Events (SSE).</li>
+<li><strong>What is the difference between CSR (Client-Side Rendering) and SSR (Server-Side Rendering)?</strong> CSR ships JS to the browser to build the DOM; SSR builds HTML on the server and sends it ready to the browser (e.g., Next.js). HazardMap uses CSR for the dashboard UI.</li>
+<li><strong>How do you prevent excessive API calls when dragging the slider?</strong> By implementing a <code>debounce</code> or <code>throttle</code> function on the input onChange handler.</li>
+<li><strong>Explain the MapLibre <code>paint</code> interpolation syntax.</strong> <code>['interpolate', ['linear'], ['get', 'property'], stop1, color1, stop2, color2]</code> mathematically blends colors between specified property values.</li>
+<li><strong>Why do heatmaps oversaturate on dense grids, and how did you fix it?</strong> Mapbox heatmaps sum density; dense grids cause values to exceed 1.0. Fixed by dynamically scaling down <code>intensity_normalized</code> weights for dense FeatureCollections.</li>
+<li><strong>What is the mathematical difference between Isobands and Isolines?</strong> Isolines are 1D topological rings connecting equal values; Isobands are 2D topological polygons bounded by isolines.</li>
+<li><strong>How does SciPy's <code>griddata</code> function work?</strong> It interpolates unstructured multi-dimensional point data onto a regular grid using nearest-neighbor, linear, or cubic (Delaunay triangulation) algorithms.</li>
+<li><strong>What is the Stull empirical formula?</strong> A formula to calculate Wet-Bulb Temperature from dry-bulb temp and RH, avoiding complex iterative psychrometric charts.</li>
+<li><strong>How does UHI affect the diurnal temperature range?</strong> It decreases it; cities retain heat and do not cool down as much as rural areas during the night.</li>
+<li><strong>Explain the physical meaning of $V_{s30}$.</strong> The time-averaged shear-wave velocity in the top 30 meters of the earth; defines site classification for seismic amplification.</li>
+<li><strong>What is Liquefaction?</strong> When saturated, loose soils lose shear strength and stiffness due to earthquake shaking, behaving like a liquid.</li>
+<li><strong>How do you calculate Peak Ground Velocity (PGV) from PGA?</strong> Empirical correlations depend on magnitude, distance, and soil type, but roughly PGV (cm/s) correlates with PGA.</li>
+<li><strong>What is a Docker volume?</strong> A mechanism for persisting data generated by and used by Docker containers, bypassing the ephemeral container filesystem.</li>
+<li><strong>Explain the purpose of <code>useEffect</code> cleanup functions.</strong> To prevent memory leaks by unsubscribing from WebSockets, clearing intervals, or aborting fetch requests when a component unmounts.</li>
+<li><strong>What is an <code>AbortController</code> in JS?</strong> An interface that allows you to abort one or more Web requests as and when desired. Used to cancel stale API requests in our map.</li>
+<li><strong>How do you handle Z-index/layer ordering in Mapbox?</strong> By explicitly passing a <code>beforeId</code> parameter when adding a layer, or using <code>map.moveLayer()</code>.</li>
+<li><strong>What is the difference between Starlette and FastAPI?</strong> FastAPI is built <em>on top of</em> Starlette, adding Pydantic data validation and auto-generated OpenAPI docs.</li>
+<li><strong>What is the Big-O time complexity of querying a raw Raster for a pixel value?</strong> $O(1)$ if the array is in memory; if searching via bounding box, $O(1)$ via matrix slicing.</li>
+<li><strong>How does the Ray Casting algorithm work?</strong> To check if a point is inside a polygon, cast a ray in any direction and count intersections; odd = inside, even = outside.</li>
+<li><strong>Explain the concept of Physics-Informed Neural Networks (PINNs).</strong> Incorporating partial differential equations (PDEs) into the loss function of a neural network so it learns the physics, not just data correlations.</li>
+<li><strong>Why is forecasting landslides harder than earthquakes?</strong> Earthquakes originate deep and propagate predictably through rock. Landslides depend on highly heterogeneous, localized surface conditions (soil depth, localized rainfall, human cutting).</li>
+<li><strong>What is the difference between a 1D and 2D flood model?</strong> 1D routes water through a defined channel profile; 2D routes water across a complex spatial grid (floodplains).</li>
+<li><strong>How do you extract a river network from a DEM?</strong> Fill sinks -&gt; Flow Direction (D8 algorithm) -&gt; Flow Accumulation -&gt; Stream definition by threshold.</li>
+<li><strong>What is the difference between active and passive remote sensing?</strong> Active (like LiDAR/Radar) emits a signal and reads the bounce. Passive (like Optical satellites) reads natural reflected sunlight.</li>
+<li><strong>What is InSAR?</strong> Interferometric Synthetic Aperture Radar; detects millimeter-level ground deformation over time, useful for detecting slow-moving landslides.</li>
+<li><strong>How would you deploy this platform to AWS?</strong> Dockerize the app, push to ECR. Use ECS (Fargate) to run containers. Serve frontend via S3/CloudFront. Connect to managed PostgreSQL/PostGIS in RDS.</li>
+<li><strong>What is a Reverse Proxy (e.g., Nginx)?</strong> A server that sits in front of backend servers and forwards client requests to them; provides load balancing, SSL termination, and caching.</li>
+<li><strong>What is the difference between deterministic and probabilistic modeling?</strong> Deterministic answers "What happens if this exact event occurs?" Probabilistic answers "What is the chance of this happening in the next 50 years?"</li>
+<li><strong>How did you handle the NaN/NoData values in NumPy arrays?</strong> Using <code>np.nan_to_num</code> or masked arrays (<code>np.ma</code>) to ignore void pixels during computation.</li>
+<li><strong>What is the role of an Activation Function in Deep Learning?</strong> Introduces non-linearity into the network, allowing it to learn complex patterns (e.g., ReLU, Sigmoid).</li>
+<li><strong>Explain the Bias-Variance Tradeoff.</strong> Bias is error from erroneous assumptions in the learning algorithm (underfitting). Variance is error from sensitivity to small fluctuations in the training set (overfitting).</li>
+<li><strong>Why do you scale/normalize data for SVMs but not for Random Forests?</strong> SVMs rely on distance metrics (Euclidean) which are skewed if features have different scales. Decision Trees split on thresholds, which are scale-invariant.</li>
+<li><strong>What is Cross-Entropy Loss?</strong> A loss function used in classification tasks that measures the performance of a model whose output is a probability value between 0 and 1.</li>
+<li><strong>What is the difference between HTTP/1.1 and HTTP/2?</strong> HTTP/2 introduces multiplexing (multiple requests over a single TCP connection), header compression, and server push.</li>
+<li><strong>How do you optimize a Dockerfile to be small?</strong> Use Alpine Linux base images, use multi-stage builds (compile in one stage, run in a minimal stage), and combine <code>RUN</code> commands to reduce layers.</li>
+<li><strong>What is the Event Loop in Node.js/JavaScript?</strong> A mechanism that handles asynchronous callbacks, executing them when the call stack is empty, allowing JS to be non-blocking.</li>
+<li><strong>What is a Promise in JavaScript?</strong> An object representing the eventual completion (or failure) of an asynchronous operation and its resulting value.</li>
+<li><strong>How does Python's <code>asyncio</code> differ from JavaScript's Event Loop?</strong> Python requires explicit <code>await</code> and <code>async</code> keywords to yield control back to the event loop, whereas JS handles async implicitly in its runtime.</li>
+<li><strong>What is a Tiled Web Map?</strong> A map that loads geographic data in multiple seamless square tiles (usually 256x256 pixels) based on the XYZ coordinate scheme to save bandwidth.</li>
+<li><strong>What is the difference between Raster Tiles (PNG/JPG) and Vector Tiles (PBF)?</strong> Raster tiles are pre-rendered images; they get blurry when zoomed. Vector tiles contain raw geometry data, allowing the client (browser) to style and render them crisply at any zoom level.</li>
+<li><strong>How would you secure the FastAPI endpoints from DDoS attacks?</strong> Implement Rate Limiting middleware (e.g., <code>slowapi</code>), use API keys, and put it behind a Web Application Firewall (WAF) like Cloudflare.</li>
+<li><strong>What is the difference between <code>GET</code> and <code>POST</code> methods?</strong> <code>GET</code> retrieves data and encodes parameters in the URL (not secure for large/sensitive data). <code>POST</code> submits data enclosed in the request body.</li>
+<li><strong>Why is state management hard in React?</strong> Because data flows unidirectionally down the component tree. Passing props deeply (prop drilling) becomes unmanageable, necessitating context or global stores like Zustand.</li>
+<li><strong>What is a closure in JavaScript?</strong> A function that remembers the variables from its lexical scope even after the outer function has finished executing.</li>
+<li><strong>How do you calculate the area of a polygon defined by coordinates?</strong> Using the Shoelace formula (Surveyor's formula) for planar coordinates, or spherical geometry algorithms for EPSG:4326.</li>
+<li><strong>What is the difference between Earth's Geoid and Ellipsoid?</strong> Ellipsoid is a smooth mathematical model of Earth. Geoid is the true, lumpy shape of Earth based on gravitational potential.</li>
+<li><strong>Why do we use the WGS84 Ellipsoid?</strong> It is the standard reference frame for GPS systems globally, providing a common baseline.</li>
+<li><strong>What is the purpose of a Spatial Index (R-Tree)?</strong> To drastically speed up spatial queries (like intersections) by grouping nearby objects and representing them with their minimum bounding rectangles.</li>
+<li><strong>How does the Sobel operator work for slope?</strong> It applies two 3x3 convolution kernels (one for X-gradient, one for Y-gradient) over the DEM to approximate the derivatives of elevation.</li>
+<li><strong>What is Hydrological Conditioning of a DEM?</strong> Filling artificial sinks/pits and burning streams into a DEM to ensure water routes continuously across the surface.</li>
+<li><strong>What is the 'Curse of Dimensionality' in ML?</strong> As the number of features increases, the volume of the feature space increases so fast that the available data becomes sparse, making statistical significance hard to find.</li>
+<li><strong>How does XGBoost differ from Random Forest?</strong> RF trains trees independently (bagging). XGBoost trains trees sequentially, where each new tree tries to correct the errors (residuals) of the previous ones (boosting).</li>
+<li><strong>What is the difference between L1 and L2 regularization?</strong> L1 (Lasso) shrinks less important feature weights to exactly zero. L2 (Ridge) shrinks weights close to zero but not exactly.</li>
+<li><strong>How does an HTTP Proxy work in Vite?</strong> It intercepts frontend requests (e.g., <code>/api/xyz</code>) and forwards them to the backend server, tricking the browser into thinking they are on the same domain to bypass CORS restrictions during development.</li>
+<li><strong>What is a JWT?</strong> JSON Web Token; a compact, URL-safe means of representing claims securely between two parties, often used for authentication.</li>
+<li><strong>How do you prevent SQL Injection in PostgreSQL?</strong> By using parameterized queries or an ORM (like SQLAlchemy) that automatically escapes input variables.</li>
+<li><strong>What is the CAP Theorem?</strong> In a distributed database, you can only guarantee two out of three: Consistency, Availability, and Partition Tolerance.</li>
+<li><strong>What is the difference between monolithic and microservice architecture?</strong> Monolithic is a single unified codebase/deployment. Microservices break the app into smaller, independent, loosely coupled services communicating via APIs.</li>
+<li><strong>Explain the Concept of 'State' in Web Development.</strong> State represents the data or UI condition of an application at a specific moment in time.</li>
+<li><strong>How does React's Reconciliation process work?</strong> React compares the new Virtual DOM with the old Virtual DOM (Diffing), identifies the changes, and updates the real DOM efficiently in batches.</li>
+<li><strong>What is the difference between a Float32 and Float64?</strong> Float64 (Double) has double the precision and takes twice the memory (8 bytes vs 4 bytes). Downcasting to Float32 is a common optimization in large NumPy arrays.</li>
+<li><strong>If you had to redo the project, what architectural change would you make?</strong> Migrating to PostGIS for all spatial operations instead of relying entirely on in-memory NumPy/Pandas processing, allowing for planet-scale horizontal scaling.</li>
+</ol>
+<h2>SECTION 19 — RAPID FIRE ROUND</h2>
+<p><em>(For last-minute revision outside the exam hall)</em></p>
+<ul>
+<li><strong>Project Name?</strong> Hazard Map Platform.</li>
+<li><strong>Core Goal?</strong> Dynamic, multi-hazard risk simulation and visualization.</li>
+<li><strong>Frontend?</strong> React, Vite, MapLibre GL JS, Zustand.</li>
+<li><strong>Backend?</strong> FastAPI, Python, NumPy, SciPy.</li>
+<li><strong>Database?</strong> Currently local flat-files/cache; PostGIS planned for production.</li>
+<li><strong>ML Algorithm?</strong> Random Forest.</li>
+<li><strong>Earthquake Metric?</strong> Peak Ground Acceleration (PGA).</li>
+<li><strong>Earthquake Physics Model?</strong> GMPE (Ground Motion Prediction Equation).</li>
+<li><strong>Heatwave Metric?</strong> IMD Temperature Anomaly &amp; WBGT (Wet-Bulb Globe Temp).</li>
+<li><strong>Landslide Input Data?</strong> DEM (Slope, Aspect, Elevation), Lithology, Rainfall, PGA.</li>
+<li><strong>Geospatial Data Format?</strong> GeoJSON.</li>
+<li><strong>Coordinate System?</strong> EPSG:4326 (WGS84) for data; EPSG:3857 (Web Mercator) for rendering.</li>
+<li><strong>Optimization Technique?</strong> Server-side vectorization (sending isolines instead of massive rasters).</li>
+<li><strong>Deployment Tool?</strong> Docker and docker-compose.</li>
+<li><strong>Most novel feature?</strong> Multi-hazard cascading logic (Earthquakes triggering Landslides dynamically).</li>
+</ul>
+<hr />
+<h2>SECTION 20 — PROJECT DEFENSE QUESTIONS</h2>
+<h3>Q20.1: Why did you choose this architecture?</h3>
+<p><strong>Beginner Answer:</strong><br />
+We chose this setup because Python is great at math and science, while React is great at building beautiful user interfaces.</p>
+<p><strong>Technical Answer:</strong><br />
+The architecture is explicitly decoupled to separate concerns. CPU-bound geospatial matrix operations must run on a backend capable of C-level vectorization (Python/NumPy). The frontend must be highly reactive to handle complex WebGL state mutations without blocking the main browser thread. A monolithic architecture (like Django templating) would fail here because rendering 10,000 GeoJSON polygons requires dedicated client-side GPU processing.</p>
+<p><strong>Advanced Answer:</strong><br />
+This architecture reflects the modern "headless GIS" paradigm. By shifting the computational burden (raster algebra, contouring, interpolation) entirely to the FastAPI server, we bypass the browser's strict RAM and V8 engine limitations. The backend acts as a spatial microservice, emitting highly compressed payload geometries. If user load scales, the stateless FastAPI workers can be container-orchestrated (Kubernetes) horizontally behind a load balancer, connecting to a shared Redis cache for precomputed isolines.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What happens if the Python backend takes 10 seconds to calculate? (The React frontend uses an asynchronous <code>await fetch</code> with a loading spinner. In the future, we would use Celery/WebSockets for long-polling).
+* How do you handle CORS?</p>
+<p><strong>Common Mistakes:</strong><br />
+* Explaining the architecture as "React talks to a database." There is no direct DB connection; the crucial layer is the intermediate Python Physics Engine.</p>
+<p><strong>Project Relation:</strong><br />
+This defends your foundational tech stack choice against examiners who might ask "Why didn't you just use PHP/MySQL" or "Why not just a QGIS plugin?"</p>
+<hr />
+<h3>Q20.2: Why didn't you use Deep Learning?</h3>
+<p><strong>Beginner Answer:</strong><br />
+Deep learning requires millions of data points and supercomputers to train. Our Random Forest model is much faster and actually performs better for our specific type of map data.</p>
+<p><strong>Technical Answer:</strong><br />
+Deep Learning (like Convolutional Neural Networks) excels at spatial context (e.g., extracting roads from satellite imagery). However, for pixel-by-pixel tabular classification (where each pixel is an independent row of features like Slope, Rain, Soil), tree-based ensemble models like Random Forest generally outperform Multi-Layer Perceptrons (MLPs). Neural Networks are prone to severe overfitting on imbalanced landslide datasets and require exhaustive hyperparameter tuning.</p>
+<p><strong>Advanced Answer:</strong><br />
+The decisive factor was <strong>Interpretability</strong>. In disaster management, stakeholders require explainable AI (XAI). A deep neural network is a black box. Random Forest provides deterministic Gini Importance scores, allowing us to mathematically prove to geologists that "Slope" contributes 45% to the hazard probability. Furthermore, RF partitions the non-linear feature space directly without requiring the strict feature normalization/standardization that backpropagation gradients strictly demand.</p>
+<p><strong>Follow-up Questions:</strong><br />
+<em> Under what circumstances </em>would* you use Deep Learning for this project? (Answer: Physics-Informed Neural Networks to replace the GMPE, or UNet for real-time flood inundation mapping).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Defending the choice by saying "Deep Learning is too hard." Defend it on technical merits: tabular data suitability and interpretability.</p>
+<p><strong>Project Relation:</strong><br />
+Defends your specific choice of Random Forest in <code>train_model.py</code> and the Susceptibility generation pipeline.</p>
+<hr />
+<h3>Q20.3: Why not use real-time satellite data for the DEM?</h3>
+<p><strong>Beginner Answer:</strong><br />
+The shape of the Earth's mountains doesn't change every day. A static, pre-downloaded map of the terrain is perfectly accurate for our needs and much faster to load.</p>
+<p><strong>Technical Answer:</strong><br />
+Topography is largely temporally invariant. The SRTM/Copernicus 30m DEM represents static bare-earth elevation. Fetching a 5GB GeoTIFF from NASA's EarthExplorer API in real-time every time a user clicks "Run" is architecturally absurd and would result in 10-minute API latencies. </p>
+<p><strong>Advanced Answer:</strong><br />
+While meteorological data (rainfall, temperature) is temporally dynamic and necessitates real-time API ingestion (via Open-Meteo), geological data (DEM, Lithology) is static. By caching the DEM arrays on the server disk during initialization, our $O(N)$ memory reads operate in microseconds. The only time we would need "real-time" satellite data is if we were using Synthetic Aperture Radar (InSAR) to measure millimeter-level slope deformation right before a landslide, which is beyond the scope of a macro-scale hazard simulation platform.</p>
+<p><strong>Follow-up Questions:</strong><br />
+<em> What </em>is* fetched in real-time? (Live weather anomalies, forecast data).
+* What happens if a massive earthquake permanently changes the elevation? (The local DEM tile would need to be manually updated in the server cache).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Thinking that "real-time" automatically equals "better." Caching static data is a core tenet of system optimization.</p>
+<p><strong>Project Relation:</strong><br />
+Explains why the <code>data/</code> folder contains large static <code>.tif</code> files while the Heatwave module fetches from external URLs.</p>
+<hr />
+<h3>Q20.4: How do you know your simulations are accurate?</h3>
+<p><strong>Beginner Answer:</strong><br />
+We validated our models against historical data. For example, we checked if our landslide model would have predicted past landslides that actually happened.</p>
+<p><strong>Technical Answer:</strong><br />
+Accuracy must be defined per module. 
+*   <strong>Landslide:</strong> The Random Forest model was validated using spatial cross-validation and AUC-ROC metrics against a withheld testing set of historical GSI landslide inventories.
+*   <strong>Earthquake:</strong> The GMPE equations are standard empirical formulas validated by global seismological organizations against historical seismometer readings.
+*   <strong>Heatwave:</strong> The IMD anomaly formulas are strictly algorithmic based on absolute mathematical thresholds against the ERA5 30-year baseline.</p>
+<p><strong>Advanced Answer:</strong><br />
+While our algorithmic implementations are mathematically sound, true deterministic accuracy is limited by input resolution. A 30m DEM cannot capture a 5m retaining wall that might prevent a landslide. Therefore, the platform outputs probabilistic <em>Hazard Susceptibility Indices</em> rather than binary deterministic predictions. It is crucial to frame the project as a <strong>Decision Support System (DSS) and Scenario Simulator</strong>, not a localized life-critical early warning system.</p>
+<p><strong>Follow-up Questions:</strong><br />
+* What was your AUC score for the landslide model?
+* How did you validate the Earthquake GMPE without live sensors? (By comparing our generated PGA contour rings for a historical event, like the 2001 Bhuj Earthquake, against published USGS ShakeMaps).</p>
+<p><strong>Common Mistakes:</strong><br />
+* Claiming 100% accuracy. 
+* Failing to distinguish between algorithmic accuracy (did the code run the math right?) and predictive accuracy (will the mountain actually fall?).</p>
+<p><strong>Project Relation:</strong><br />
+This is the ultimate defense of the project's scientific validity. It shows the examiner you understand the boundary between a computer science simulation and the chaotic reality of physical geology.</p>
+<script>
+  window.onload = function() { window.print(); }
+</script>
+</body>
+</html>

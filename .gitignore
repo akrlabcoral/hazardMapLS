@@ -32,6 +32,9 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Build output
 dist/

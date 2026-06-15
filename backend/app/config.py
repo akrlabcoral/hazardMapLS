@@ -58,11 +58,21 @@ RISK_THRESHOLDS = {
     "MODERATE": 0.2,
 }
 
+# Linear color mapping for Landslide / General Risk (0.0 to 1.0)
+# We start at 0.20 so that completely safe plains are transparent instead of painting the whole map.
+LANDSLIDE_LEVELS = [0.20, 0.4, 0.6, 0.8]
+LANDSLIDE_COLORS = [
+    "#22c55e",  # Green      (0.20 - 0.40)
+    "#eab308",  # Yellow     (0.40 - 0.60)
+    "#f97316",  # Orange     (0.60 - 0.80)
+    "#ef4444",  # Red        (> 0.80)
+]
+
 # ---------------------------------------------------------------------------
 # Contour Generation Settings
 # ---------------------------------------------------------------------------
-CONTOUR_GRID_SIZE = 400    # resolution of the interpolation meshgrid (NxN)
-CONTOUR_BLUR_SIGMA = 1.5   # Gaussian blur sigma — smooths jagged contour edges
+CONTOUR_GRID_SIZE = 150    # resolution of the interpolation meshgrid (NxN)
+CONTOUR_BLUR_SIGMA = 2.5   # Gaussian blur sigma — smooths jagged contour edges
 CONTOUR_FILL_OPACITY = 0.6
 
 # ---------------------------------------------------------------------------

@@ -35,7 +35,10 @@ export default function MapView() {
   const mlSimulationData = useStore((state) => state.mlSimulationData);
   const mlHeatmapVisible = useStore((state) => state.mlHeatmapVisible);
   const mlContoursVisible = useStore((state) => state.mlContoursVisible);
+  const heatwaveActiveLayer = useStore((state) => state.heatwaveActiveLayer);
+  const mapClearToken = useStore((state) => state.mapClearToken);
   const activeModule = useStore((state) => state.activeModule);
+  const landslideType = useStore((state) => state.landslideType);
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
 
   const mapStyle          = useStore((state) => state.mapStyle);
@@ -60,11 +63,11 @@ export default function MapView() {
       maxzoom: 15,
       paint: {
         'heatmap-weight': ['interpolate', ['linear'], ['get', 'intensity_normalized'], 0, 0, 1.0, 1],
-        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.2, 15, 3.5],
+        'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1.2, 15, 6.0],
         'heatmap-color': [
           'interpolate', ['linear'], ['heatmap-density'],
-          0.0, 'rgba(0,0,255,0)',
-          0.1, 'rgba(0,0,255,0.4)',
+          0.0, 'rgba(16,185,129,0)',
+          0.1, 'rgba(16,185,129,0.2)',
           0.3, '#10b981',
           0.5, '#eab308',
           0.7, '#f97316',
@@ -379,6 +382,68 @@ export default function MapView() {
     map.current.on('mouseleave', 'landslides-circles', () => { map.current.getCanvas().style.cursor = ''; });
 
 
+    // --- Simulation Layer Popups (Heatwave & Landslide/Earthquake) ---
+    const handleSimulationClick = (e) => {
+      const activeModule = useStore.getState().activeModule;
+      const p = e.features[0].properties;
+
+      if (activeModule === 'heatwave') {
+        new maplibregl.Popup({ maxWidth: '280px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-family:sans-serif;padding:6px;min-width:180px;color:#1e293b;">
+              <b style="font-size:14px;color:#0f172a;">${p.district || 'Region Data Unavailable'}</b><br/>
+              <span style="color:#64748b;font-size:12px;">${p.state || 'Unknown State'}</span>
+              <hr style="margin:6px 0;border-color:#e2e8f0;"/>
+              <table style="font-size:12px;width:100%;">
+                <tr><td style="color:#64748b;">Temperature</td><td style="text-align:right;font-weight:bold;color:#f97316;">${p.temperature ? p.temperature + '°C' : 'N/A'}</td></tr>
+                <tr><td style="color:#64748b;">Status</td><td style="text-align:right;font-weight:bold;color:#dc2626;">${p.status || 'N/A'}</td></tr>
+              </table>
+            </div>
+          `)
+          .addTo(map.current);
+      } else if (['landslide', 'earthquake', 'combined'].includes(activeModule)) {
+        if (p.fused_hazard === undefined && p.hazard_probability === undefined) return; // ensure it's a valid grid cell
+        
+        const totalHaz = p.hazard_probability !== undefined ? p.hazard_probability : p.fused_hazard;
+        
+        new maplibregl.Popup({ maxWidth: '300px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-family:sans-serif;padding:6px;min-width:200px;color:#1e293b;">
+              <b style="font-size:14px;color:#0f172a;">${p.district || 'Unknown'}, ${p.state || 'Unknown'}</b><br/>
+              <hr style="margin:6px 0;border-color:#e2e8f0;"/>
+              <table style="font-size:12px;width:100%;">
+                <tr><td style="color:#64748b;">Total Hazard</td><td style="text-align:right;font-weight:bold;color:#dc2626;">${totalHaz !== undefined ? (totalHaz * 100).toFixed(1) + '%' : 'N/A'}</td></tr>
+                ${p.susceptibility !== undefined ? `<tr><td style="color:#64748b;">Susceptibility</td><td style="text-align:right;font-weight:bold;color:#f97316;">${(p.susceptibility * 100).toFixed(1)}%</td></tr>` : ''}
+                ${p.trigger_probability !== undefined ? `<tr><td style="color:#64748b;">Trigger Prob</td><td style="text-align:right;font-weight:bold;color:#3b82f6;">${(p.trigger_probability * 100).toFixed(1)}%</td></tr>` : ''}
+                ${p.historical_density !== undefined ? `<tr><td style="color:#64748b;">Hist. Density</td><td style="text-align:right;">${(p.historical_density * 100).toFixed(1)}%</td></tr>` : ''}
+                ${p.pga_base !== undefined ? `<tr><td style="color:#64748b;">Max PGA</td><td style="text-align:right;font-weight:bold;color:#f97316;">${p.pga_base.toFixed(3)}g</td></tr>` : ''}
+              </table>
+            </div>
+          `)
+          .addTo(map.current);
+      }
+    };
+
+    map.current.on('click', SIM_LAYERS.WB_GRID_FILL, handleSimulationClick);
+    map.current.on('click', SIM_LAYERS.CONTOUR_FILL, handleSimulationClick);
+
+    map.current.on('mouseenter', SIM_LAYERS.WB_GRID_FILL, () => {
+      map.current.getCanvas().style.cursor = 'pointer';
+    });
+    map.current.on('mouseleave', SIM_LAYERS.WB_GRID_FILL, () => {
+      map.current.getCanvas().style.cursor = '';
+    });
+    map.current.on('mouseenter', SIM_LAYERS.CONTOUR_FILL, () => {
+      if (useStore.getState().activeModule !== 'heatwave') {
+        map.current.getCanvas().style.cursor = 'pointer';
+      }
+    });
+    map.current.on('mouseleave', SIM_LAYERS.CONTOUR_FILL, () => {
+      map.current.getCanvas().style.cursor = '';
+    });
+
     map.current.on('style.load', () => {
       initSimulationLayers(map.current);
       mapLayerService.initializeSourcesAndLayers(map.current, useStore.getState().gisLayers);
@@ -516,6 +581,47 @@ export default function MapView() {
     }
   }, [selectedStateName]);
 
+  useEffect(() => {
+    if (!map.current || !map.current.getStyle()) return;
+
+    const simulationSources = [
+      'sim-wb-grid-source',
+      'sim-contour-source',
+      'sim-shockwave-source',
+      'sim-epicenter-source',
+      'sim-ml-heatmap-source',
+      'sim-ml-contours-source',
+    ];
+    mapLayerManager.clearSourcesData(map.current, simulationSources);
+
+    [
+      SIM_LAYERS.CONTOUR_FILL,
+      SIM_LAYERS.CONTOUR_STROKE,
+      SIM_LAYERS.WB_GRID_FILL,
+      SIM_LAYERS.SOIL_AMP,
+      SIM_LAYERS.SHOCKWAVE,
+      SIM_LAYERS.EPICENTER,
+      'sim-epicenter-glow',
+      'sim-epicenter-ring',
+      'sim-ml-heatmap-layer',
+      'sim-ml-contours-layer',
+    ].forEach((layerId) => {
+      if (map.current.getLayer(layerId)) {
+        map.current.setLayoutProperty(layerId, 'visibility', 'none');
+      }
+    });
+
+    try {
+      if (map.current.getSource('state-boundaries-source')) {
+        map.current.removeFeatureState({ source: 'state-boundaries-source' });
+      }
+    } catch (err) {
+      console.warn('[MapView] Failed to remove feature state:', err);
+    }
+
+    animationManager.stopShockwave();
+  }, [mapClearToken]);
+
   // Render simulation results and trigger shockwave
   useEffect(() => {
     if (!map.current) return;
@@ -572,15 +678,49 @@ export default function MapView() {
         console.log('[MapView] Rendering new simulation results. Current store epicenter:', currentEpicenter);
         console.log('[MapView] Grid features count:', simulationResults.grid_geojson.features?.length);
 
-        wbGridSrc.setData(simulationResults.grid_geojson);
+        let gridData = simulationResults.grid_geojson;
+        const isSeismicLandslide = activeModule === 'landslide' && landslideType === 'earthquake';
+
+        // The backend now pre-filters features to the affected radius
+        wbGridSrc.setData(gridData);
         if (simulationResults.contour_geojson) {
           contourSrc.setData(simulationResults.contour_geojson);
         }
         
-        if (map.current.getLayer(SIM_LAYERS.CONTOUR_FILL))   map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_FILL,   'visibility', 'visible');
-        if (map.current.getLayer(SIM_LAYERS.CONTOUR_STROKE)) map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', 'visible');
-        if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL))   map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL,   'visibility', 'visible');
-        console.log('[MapView] Layers made visible:', SIM_LAYERS.CONTOUR_FILL, SIM_LAYERS.CONTOUR_STROKE, SIM_LAYERS.WB_GRID_FILL);
+        const showGrid = activeModule === 'earthquake' || isSeismicLandslide;
+        const showContours = !showGrid;
+        
+        if (map.current.getLayer(SIM_LAYERS.CONTOUR_FILL))   map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_FILL,   'visibility', showContours ? 'visible' : 'none');
+        if (map.current.getLayer(SIM_LAYERS.CONTOUR_STROKE)) map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', showContours ? 'visible' : 'none');
+        
+        if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
+          const propertyToUse = isSeismicLandslide ? 'susceptibility' : 'fused_hazard';
+          
+          const colorRamp = isSeismicLandslide 
+            ? [
+                'interpolate', ['linear'], ['get', propertyToUse],
+                0.0, 'rgba(34, 197, 94, 0.3)', // Visible green for 0 risk in affected area
+                0.2, 'rgba(34, 197, 94, 0.5)',
+                0.4, 'rgba(234, 179, 8, 0.6)',
+                0.6, 'rgba(249, 115, 22, 0.7)',
+                0.8, 'rgba(239, 68, 68, 0.8)',
+                1.0, 'rgba(185, 28, 28, 0.95)',
+              ]
+            : [
+                'interpolate', ['linear'], ['get', propertyToUse],
+                0.0, 'rgba(34, 197, 94, 0.0)', // Transparent for 0 risk outside
+                0.2, 'rgba(34, 197, 94, 0.5)',
+                0.4, 'rgba(234, 179, 8, 0.6)',
+                0.6, 'rgba(249, 115, 22, 0.7)',
+                0.8, 'rgba(239, 68, 68, 0.8)',
+                1.0, 'rgba(185, 28, 28, 0.95)',
+              ];
+
+          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-color', colorRamp);
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
+          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', showGrid ? 1.0 : 0.0);
+        }
+        console.log('[MapView] Layers made visible:', SIM_LAYERS.CONTOUR_FILL, SIM_LAYERS.CONTOUR_STROKE);
 
         if (simulationResults.state_summary) {
           const mapping = useStore.getState().stateIdMapping;
@@ -617,7 +757,7 @@ export default function MapView() {
     } else {
       map.current.once('styledata', updateSimulationResults);
     }
-  }, [simulationResults, earthquakeEpicenter]);
+  }, [simulationResults, earthquakeEpicenter, activeModule, landslideType]);
 
   
   // Sync ML Heatmap & Contours Data
@@ -629,26 +769,115 @@ export default function MapView() {
     
     if (!heatmapSource || !contoursSource) return;
 
-    if (mlSimulationData && mlSimulationData.length > 0) {
-      const features = mlSimulationData.map((pt) => ({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [pt.lng, pt.lat] },
-        properties: { intensity: pt.intensity }
-      }));
-      const fc = { type: 'FeatureCollection', features };
-      heatmapSource.setData(fc);
+    if (mlSimulationData) {
+      // Unify Heatwave (FeatureCollection) and Landslide (Array) into points for isolines
+      const isGrid = mlSimulationData.type === 'FeatureCollection';
+      
+      const features = isGrid 
+        ? mlSimulationData.features.map(f => {
+            let val = 0;
+            if (activeModule === 'heatwave' && heatwaveActiveLayer === 'temperature') {
+              const t = f.properties.temperature || 30;
+              val = Math.max(0, Math.min(1, (t - 30) / 18));
+            } else if (activeModule === 'heatwave' && heatwaveActiveLayer === 'anomaly') {
+              const a = f.properties.anomaly || 0;
+              val = Math.max(0, Math.min(1, a / 8));
+            } else {
+              val = f.properties.hazard_probability ?? f.properties.fused_hazard ?? 0;
+            }
+            return {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [f.properties.centroid_lon, f.properties.centroid_lat] },
+              properties: { 
+                intensity: val,
+                intensity_normalized: val * 0.05
+              }
+            };
+          })
+        : (mlSimulationData.length > 0 ? mlSimulationData.map(pt => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [pt.lng, pt.lat] },
+            properties: { 
+              intensity: pt.intensity,
+              intensity_normalized: pt.intensity
+            }
+          })) : []);
 
-      try {
-        const breaks = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
-        const lines = isolines(fc, breaks, { zProperty: 'intensity' });
-        contoursSource.setData(lines);
-      } catch (err) {
+      if (features.length > 0) {
+        const fc = { type: 'FeatureCollection', features };
+        heatmapSource.setData(fc);
+
+        try {
+          const breaks = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+          const lines = isolines(fc, breaks, { zProperty: 'intensity' });
+          contoursSource.setData(lines);
+        } catch (err) {
+          contoursSource.setData({ type: 'FeatureCollection', features: [] });
+        }
+      } else {
+        heatmapSource.setData({ type: 'FeatureCollection', features: [] });
         contoursSource.setData({ type: 'FeatureCollection', features: [] });
       }
+      
+      // Ensure the old blocky grid is hidden
+      const wbGridSrc = map.current.getSource('sim-wb-grid-source');
+      if (wbGridSrc) wbGridSrc.setData({ type: 'FeatureCollection', features: [] });
+      if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
+        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+      }
     } else {
-      mapLayerManager.clearSourcesData(map.current, ['sim-ml-heatmap-source', 'sim-ml-contours-source']);
+      mapLayerManager.clearSourcesData(map.current, ['sim-ml-heatmap-source', 'sim-ml-contours-source', 'sim-wb-grid-source']);
+      if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
+        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+      }
     }
-  }, [mlSimulationData, isStyleLoaded]);
+  }, [mlSimulationData, isStyleLoaded, heatwaveActiveLayer, activeModule]);
+
+  // Sync Dynamic Heatmap Colors
+  useEffect(() => {
+    if (!isStyleLoaded || !map.current) return;
+    if (!mapLayerManager.layerExists(map.current, 'sim-ml-heatmap-layer')) return;
+
+    let colorRamp;
+    if (activeModule === 'heatwave' && heatwaveActiveLayer === 'temperature') {
+      colorRamp = [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0.0, 'rgba(34,197,94,0)',
+        0.1, '#4ade80',
+        0.2, '#a3e635',
+        0.3, '#facc15',
+        0.4, '#fdba74',
+        0.5, '#fb923c',
+        0.6, '#f97316',
+        0.7, '#ea580c',
+        0.8, '#dc2626',
+        0.85, '#991b1b',
+        0.9, '#86198f',
+        0.95, '#701a75',
+        1.0, '#4a044e'
+      ];
+    } else if (activeModule === 'heatwave' && heatwaveActiveLayer === 'anomaly') {
+      colorRamp = [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0.0, 'rgba(74,222,128,0)',
+        0.2, '#facc15',
+        0.4, '#ea580c',
+        0.6, '#dc2626',
+        0.8, '#991b1b'
+      ];
+    } else {
+      colorRamp = [
+        'interpolate', ['linear'], ['heatmap-density'],
+        0.0, 'rgba(16,185,129,0)',
+        0.1, 'rgba(16,185,129,0.2)',
+        0.3, '#10b981',
+        0.5, '#eab308',
+        0.7, '#f97316',
+        0.9, '#ef4444'
+      ];
+    }
+    map.current.setPaintProperty('sim-ml-heatmap-layer', 'heatmap-color', colorRamp);
+  }, [activeModule, heatwaveActiveLayer, isStyleLoaded]);
 
   // Sync ML Layer Visibility
   useEffect(() => {
@@ -702,14 +931,15 @@ export default function MapView() {
     
     const sourceId = 'landslide-validation-source';
     const layerId = 'landslide-validation-layer';
-    const isVisible = useStore.getState().historicalValidationVisible;
+    
+    // Check if the GIS Layers "Landslides" toggle is active AND we are in the landslide module
+    const isVisible = gisLayers['landslides'] && activeModule === 'landslide';
     
     if (isVisible) {
       if (!mapLayerManager.sourceExists(map.current, sourceId)) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
         mapLayerManager.addSourceSafe(map.current, sourceId, {
           type: 'geojson',
-          data: `${backendUrl}/api/landslide/validation-points`
+          data: '/scientific-api/landslide/validation-points'
         });
         
         mapLayerManager.addLayerSafe(map.current, {
@@ -733,7 +963,7 @@ export default function MapView() {
         map.current.setLayoutProperty(layerId, 'visibility', 'none');
       }
     }
-  }, [useStore((state) => state.historicalValidationVisible), isStyleLoaded]);
+  }, [gisLayers, activeModule, isStyleLoaded]);
 
   return (
     <div className="absolute inset-0 z-0">

@@ -73,7 +73,7 @@ def process_csv(csv_path: str):
         "features": features
     }
 
-    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "landslides", "india_landslides_NASA_GSI.geojson")
+    out_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "landslides", "india_landslides_NASA_GSI.geojson")
     
     with open(out_path, 'w') as f:
         json.dump(geojson, f, indent=2)

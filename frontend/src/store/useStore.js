@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { BUILT_IN_RASTERS } from '../config/rasterRegistry';
 import { HAZARD_LAYERS } from '../services/layerCapabilities';
 
-const useStore = create((set) => ({
+const useStore = create((set, get) => ({
   isSidebarOpen: true,
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
   
@@ -65,6 +65,10 @@ const useStore = create((set) => ({
     slopeRisk: false,
     soilMoisture: false,
   },
+  
+  heatwaveActiveLayer: 'status', // 'status', 'temperature', 'anomaly'
+  setHeatwaveActiveLayer: (layer) => set({ heatwaveActiveLayer: layer }),
+
   toggleGisLayer: (layer) => set((state) => ({
     gisLayers: { ...state.gisLayers, [layer]: !state.gisLayers[layer] }
   })),
@@ -132,17 +136,30 @@ const useStore = create((set) => ({
   setMlHeatmapVisible: (visible) => set({ mlHeatmapVisible: visible }),
   mlContoursVisible: false,
   setMlContoursVisible: (visible) => set({ mlContoursVisible: visible }),
+  mapClearToken: 0,
+
+  currentSimAbortController: null,
+  setCurrentSimAbortController: (ctrl) => set({ currentSimAbortController: ctrl }),
 
   // Centralized cleanup for simulation state
-  clearSimulationState: () => set({
-    earthquakeEpicenter: null,
-    simulationResults: null,
-    isSimulationRunning: false,
-    mlSimulationData: null,
-    mlHeatmapVisible: false,
-    mlContoursVisible: false,
-    historicalValidationVisible: false,
-  }),
+  clearSimulationState: () => {
+    const state = get();
+    if (state.currentSimAbortController) {
+      state.currentSimAbortController.abort();
+    }
+    
+    set({
+      earthquakeEpicenter: null,
+      simulationResults: null,
+      isSimulationRunning: false,
+      mlSimulationData: null,
+      mlHeatmapVisible: false,
+      mlContoursVisible: false,
+      historicalValidationVisible: false,
+      currentSimAbortController: null,
+      mapClearToken: state.mapClearToken + 1,
+    });
+  },
 
   // ── Landslide Simulation State ─────────────────────────────────────────────
   landslideType: 'rainfall', // 'rainfall', 'earthquake', 'combined'
@@ -156,6 +173,16 @@ const useStore = create((set) => ({
   
   historicalValidationVisible: false,
   setHistoricalValidationVisible: (val) => set({ historicalValidationVisible: val }),
+
+  // ── Heatwave Simulation State ──────────────────────────────────────────────
+  heatwaveTemperature: 45.0,
+  setHeatwaveTemperature: (val) => set({ heatwaveTemperature: val }),
+  
+  heatwaveHumidity: 40.0,
+  setHeatwaveHumidity: (val) => set({ heatwaveHumidity: val }),
+
+  heatwaveDuration: 3,
+  setHeatwaveDuration: (val) => set({ heatwaveDuration: val }),
 
   // Advanced GMPE Parameters
   useCustomGmpe: false,

@@ -17,13 +17,19 @@ export default defineConfig(({ mode }) => {
       // this routing instead.
       proxy: {
         '/ml-api': {
-          target: env.VITE_ML_API_URL || 'http://localhost:8000',
+          target: env.VITE_ML_API_URL || 'http://127.0.0.1:8000',
           changeOrigin: true,
+          ws: true,
+          proxyTimeout: 300000,
+          timeout: 300000,
           rewrite: (path) => path.replace(/^\/ml-api/, ''),
         },
         '/scientific-api': {
-          target: env.VITE_SCIENTIFIC_API_URL || 'http://localhost:8000',
+          target: env.VITE_SCIENTIFIC_API_URL || 'http://127.0.0.1:8000',
           changeOrigin: true,
+          ws: true,
+          proxyTimeout: 300000,
+          timeout: 300000,
           rewrite: (path) => path.replace(/^\/scientific-api/, '/api'),
         },
       },
