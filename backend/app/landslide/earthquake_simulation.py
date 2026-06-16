@@ -37,7 +37,8 @@ def run_earthquake_simulation(grid: dict, magnitude: float, depth: float, lat: f
         pga=raw_pga,
         soil=raster_data["soil_moisture"],
         elevation=raster_data["elevation"],
-        hist_density=hist_density
+        hist_density=hist_density,
+        lats=lats
     )
     
     # Annotate features
