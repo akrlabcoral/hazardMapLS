@@ -1,37 +1,5 @@
 # Dependencies
 node_modules/
-
-# Build output
-dist/
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE/editor files
-.vscode/
-.idea/
-
-# Optional cache folders
-.cache/
-.parcel-cache/
-.next/
-.nuxt/
-.svelte-kit/
-
-# Dependencies
-node_modules/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -76,3 +44,6 @@ backend/data/simulations.db
 
 # Ignore massive TIF raster files which break GitHub
 *.tif
+
+# Ignore large simulation response dumps
+response.json

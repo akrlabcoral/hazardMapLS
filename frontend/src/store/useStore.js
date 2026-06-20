@@ -49,7 +49,7 @@ const useStore = create((set, get) => ({
   isSimulationRunning: false,
   setIsSimulationRunning: (val) => set({ isSimulationRunning: val }),
 
-  activeAlerts: [],
+  activeAlert: null,
   
   gisLayers: {
     satellite: false,
@@ -170,6 +170,12 @@ const useStore = create((set, get) => ({
   
   rainfallDuration: 3.0,
   setRainfallDuration: (val) => set({ rainfallDuration: val }),
+  
+  isLiveRainfall: false,
+  setIsLiveRainfall: (val) => set({ isLiveRainfall: val }),
+  
+  targetDateOffset: 0,
+  setTargetDateOffset: (val) => set({ targetDateOffset: val }),
   
   historicalValidationVisible: false,
   setHistoricalValidationVisible: (val) => set({ historicalValidationVisible: val }),

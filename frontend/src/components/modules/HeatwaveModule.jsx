@@ -24,6 +24,9 @@ export default function HeatwaveModule() {
   const heatwaveActiveLayer = useStore((state) => state.heatwaveActiveLayer);
   const setHeatwaveActiveLayer = useStore((state) => state.setHeatwaveActiveLayer);
   
+  const targetDateOffset = useStore((state) => state.targetDateOffset);
+  const setTargetDateOffset = useStore((state) => state.setTargetDateOffset);
+  
   const [error, setError] = useState(null);
   const abortControllerRef = useRef(null);
 
@@ -51,7 +54,8 @@ export default function HeatwaveModule() {
           uhi_enabled: uhiEnabled,
           duration_days: forecastDays,
           temperature: customTemp,
-          humidity: customHum
+          humidity: customHum,
+          target_date_offset: targetDateOffset
         }),
         signal: abortControllerRef.current.signal
       });
@@ -147,6 +151,30 @@ export default function HeatwaveModule() {
             <div className="flex justify-between mt-1 text-[9px] text-[#64748b]">
               <span>1 Day</span>
               <span>5 Days</span>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold text-[#f1f5f9] flex items-center gap-1">
+                <Calendar className="w-3 h-3 text-[#00d4ff]" /> 
+                Target Date
+              </span>
+              <span className="text-[12px] text-[#00d4ff] font-mono">
+                {targetDateOffset === 0 ? "Today" : targetDateOffset < 0 ? `${Math.abs(targetDateOffset)} Days Ago` : `In ${targetDateOffset} Days`}
+              </span>
+            </div>
+            <input 
+              type="range" 
+              min="-3" max="3" step="1" 
+              value={targetDateOffset} 
+              onChange={(e) => setTargetDateOffset(parseInt(e.target.value))}
+              className="w-full accent-[#00d4ff] h-1.5 bg-white/[0.1] rounded-lg appearance-none cursor-pointer"
+            />
+            <div className="flex justify-between mt-1 text-[9px] text-[#64748b]">
+              <span>-3 Days</span>
+              <span>Today</span>
+              <span>+3 Days</span>
             </div>
           </div>
           

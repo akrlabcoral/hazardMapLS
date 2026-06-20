@@ -24,6 +24,7 @@ class HeatwaveInput(BaseModel):
     duration_days: int = Field(5, ge=1, le=5, description="Days to forecast")
     is_live: bool = Field(True, description="Fetch live Open-Meteo data")
     uhi_enabled: bool = Field(False, description="Apply Urban Heat Island penalty")
+    target_date_offset: int = Field(0, ge=-3, le=3, description="Target date offset from today (-3 to +3)")
 
 @router.post("/simulate")
 async def simulate_heatwave(params: HeatwaveInput):
@@ -39,7 +40,8 @@ async def simulate_heatwave(params: HeatwaveInput):
             uhi_enabled=params.uhi_enabled,
             duration_days=params.duration_days,
             temperature=params.temperature,
-            humidity=params.humidity
+            humidity=params.humidity,
+            target_date_offset=params.target_date_offset
         )
         return result
     except Exception as exc:

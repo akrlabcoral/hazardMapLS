@@ -34,6 +34,9 @@ export function useLandslideSimulation() {
       mlContoursVisible: false,
     });
 
+    const abortController = new AbortController();
+    useStore.getState().setCurrentSimAbortController(abortController);
+
     try {
       let endpoint = '';
       let payload = {};
@@ -42,7 +45,9 @@ export function useLandslideSimulation() {
         endpoint = '/api/landslide/simulate/rainfall';
         payload = {
           intensity: rainfallIntensity,
-          duration: rainfallDuration
+          duration: rainfallDuration,
+          is_live: useStore.getState().isLiveRainfall,
+          target_date_offset: useStore.getState().targetDateOffset
         };
       } else if (landslideType === 'earthquake') {
         endpoint = '/api/landslide/simulate/earthquake';
@@ -61,12 +66,11 @@ export function useLandslideSimulation() {
           depth: earthquakeDepth,
           latitude: earthquakeEpicenter.lat,
           longitude: earthquakeEpicenter.lng,
-          gmpe_model: useStore.getState().gmpeModel
+          gmpe_model: useStore.getState().gmpeModel,
+          is_live: useStore.getState().isLiveRainfall,
+          target_date_offset: useStore.getState().targetDateOffset
         };
       }
-
-      const abortController = new AbortController();
-      useStore.getState().setCurrentSimAbortController(abortController);
 
       const response = await fetch(endpoint.replace('/api', '/scientific-api'), {
         method: 'POST',
@@ -104,6 +108,7 @@ export function useLandslideSimulation() {
       setActiveAlert({ type: 'error', message: err.message || 'Simulation failed' });
     } finally {
       setIsSimulationRunning(false);
+      useStore.getState().setCurrentSimAbortController(null);
     }
   }, [
     landslideType, 

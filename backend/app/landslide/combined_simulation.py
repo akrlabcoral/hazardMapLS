@@ -8,7 +8,17 @@ from app.services.contour_generator import generate_contour_geojson
 from app.services.impact_aggregator import aggregate_impact
 from app.landslide.validation import LandslideValidator
 
-def run_combined_simulation(grid: dict, magnitude: float, depth: float, lat: float, lon: float, intensity: float, duration: float) -> dict:
+def run_combined_simulation(
+    grid: dict,
+    magnitude: float,
+    depth: float,
+    lat: float,
+    lon: float,
+    intensity: float,
+    duration: float,
+    is_live: bool = False,
+    target_date_offset: int = 0
+) -> dict:
     # Run the PGA calculation first on the whole grid to determine the physically affected area
     gmpe, _ = GMPESelector.select(lat, lon, None)
     pga_engine = PGAEngine()
@@ -31,8 +41,17 @@ def run_combined_simulation(grid: dict, magnitude: float, depth: float, lat: flo
     validator = LandslideValidator(features)
     hist_density = validator.historical_density()
     
-    intensity_hr = np.full(len(lons), intensity / 24.0, dtype=np.float32)
-    duration_hr = duration * 24.0
+    if is_live:
+        import logging
+        logger = logging.getLogger("hazardmap.landslide")
+        from app.landslide.live_weather import get_interpolated_precipitation
+        logger.info(f"[CombinedSim] Fetching LIVE precipitation forecast (offset {target_date_offset} days)...")
+        interpolated_intensity = get_interpolated_precipitation(lons, lats, target_date_offset)
+        intensity_hr = np.array(interpolated_intensity / 24.0, dtype=np.float32)
+        duration_hr = 1.0 * 24.0
+    else:
+        intensity_hr = np.full(len(lons), intensity / 24.0, dtype=np.float32)
+        duration_hr = duration * 24.0
     
     risk_arr, susceptibility_arr, trigger_arr = combined_induced_risk(
         slope=raster_data["slope"],
@@ -66,6 +85,7 @@ def run_combined_simulation(grid: dict, magnitude: float, depth: float, lat: flo
     district_summary, state_summary = aggregate_impact(features, raw_pga, risk_arr)
     
     validation_stats = validator.validate(risk_arr)
+    max_risk_val = float(np.nanmax(risk_arr)) if len(risk_arr) > 0 else 0.0
     
     return {
         "grid_geojson": grid,
@@ -74,5 +94,5 @@ def run_combined_simulation(grid: dict, magnitude: float, depth: float, lat: flo
         "district_summary": district_summary,
         "state_summary": state_summary,
         "validation_stats": validation_stats,
-        "max_risk": round(float(np.nanmax(risk_arr)), 4)
+        "max_risk": round(max_risk_val, 4)
     }

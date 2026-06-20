@@ -21,7 +21,7 @@ BASELINE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "hea
 def fetch_live_forecast(cities):
     lats = ",".join([str(c["lat"]) for c in cities])
     lons = ",".join([str(c["lon"]) for c in cities])
-    url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&daily=temperature_2m_max,relative_humidity_2m_mean&timezone=Asia/Kolkata&forecast_days=5"
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&daily=temperature_2m_max,relative_humidity_2m_mean&timezone=Asia/Kolkata&past_days=3&forecast_days=4"
     
     r = requests.get(url, timeout=20)
     if r.status_code != 200:
@@ -38,6 +38,7 @@ def run_heatwave_simulation(
     duration_days: int,
     temperature: float = 40.0,
     humidity: float = 50.0,
+    target_date_offset: int = 0
 ) -> dict:
     if not os.path.exists(BASELINE_PATH):
         raise Exception("Baseline data missing. Run build_climate_baseline.py first.")
@@ -55,11 +56,13 @@ def run_heatwave_simulation(
     elevation = np.nan_to_num(elevation_data, nan=0.0)
     
     # Urban Mask (Synthesize from reference cities + standard radius)
+    # 0.2 degrees ≈ 22 km at the equator, ~20 km at Indian latitudes (~22°N)
+    UHI_RADIUS_DEG = 0.2
     urban_mask = np.zeros_like(lons)
     if uhi_enabled:
         for c in baseline_cities:
             dist = np.sqrt((lons - c["lon"])**2 + (lats - c["lat"])**2)
-            urban_mask[dist < 0.2] = 1.0 # roughly 20km radius
+            urban_mask[dist < UHI_RADIUS_DEG] = 1.0
             
     # Calculate baseline normal temps for current month
     current_month = str(datetime.now().month)
@@ -83,9 +86,19 @@ def run_heatwave_simulation(
         forecast_data = None
         
     daily_results = []
-    num_days = min(5, duration_days) # limit to 5
+    num_days = min(5, duration_days)
+    
+    # The forecast array has 7 days: [-3, -2, -1, 0, 1, 2, 3]
+    # Index 0 corresponds to -3. Index 3 is today (0).
+    start_index = target_date_offset + 3
+    if start_index < 0: start_index = 0
+    if start_index > 6: start_index = 6
     
     for day_idx in range(num_days):
+        forecast_day_index = start_index + day_idx
+        if forecast_day_index > 6:
+            break
+        
         live_coords = []
         live_temps = []
         live_hums = []
@@ -93,14 +106,18 @@ def run_heatwave_simulation(
         for i, c in enumerate(baseline_cities):
             if forecast_data:
                 d = forecast_data[i]["daily"]
-                t = d["temperature_2m_max"][day_idx]
-                h = d["relative_humidity_2m_mean"][day_idx]
+                if forecast_day_index < len(d["temperature_2m_max"]):
+                    t = d["temperature_2m_max"][forecast_day_index]
+                    h = d["relative_humidity_2m_mean"][forecast_day_index]
+                else:
+                    t = None
+                    h = None
                 if t is None: t = 35.0
                 if h is None: h = 50.0
             else:
                 t = temperature
                 h = humidity
-                
+            
             live_coords.append([c["lon"], c["lat"]])
             live_temps.append(t)
             live_hums.append(h)
@@ -111,6 +128,7 @@ def run_heatwave_simulation(
         
         if np.isnan(live_temp).any():
             live_temp[np.isnan(live_temp)] = griddata(live_coords, np.array(live_temps), (lons, lats), method='nearest')[np.isnan(live_temp)]
+        if np.isnan(live_hum).any():
             live_hum[np.isnan(live_hum)] = griddata(live_coords, np.array(live_hums), (lons, lats), method='nearest')[np.isnan(live_hum)]
             
         # Physics Engine

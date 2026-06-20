@@ -21,22 +21,26 @@ except Exception as exc:
     logger.error(f"[LandslideRoutes] Failed to load grid: {exc}")
 
 class RainfallInput(BaseModel):
-    intensity: float = Field(..., description="Rainfall intensity in mm/day")
-    duration: float = Field(..., description="Rainfall duration in days")
+    intensity: float = Field(50.0, ge=0, le=1000, description="Rainfall intensity in mm/day")
+    duration: float = Field(1.0, ge=0.5, le=30, description="Rainfall duration in days")
+    is_live: bool = Field(False, description="Fetch live Open-Meteo precipitation forecast")
+    target_date_offset: int = Field(0, ge=-3, le=3, description="Target date offset from today (-3 to +3)")
 
 class EarthquakeInput(BaseModel):
-    magnitude: float = Field(...)
-    depth: float = Field(...)
-    latitude: float = Field(...)
-    longitude: float = Field(...)
+    magnitude: float = Field(5.0, ge=1.0, le=9.5)
+    depth: float = Field(10.0, ge=1.0, le=700.0)
+    latitude: float = Field(22.57, ge=-90, le=90)
+    longitude: float = Field(88.36, ge=-180, le=180)
 
 class CombinedInput(BaseModel):
-    magnitude: float = Field(...)
-    depth: float = Field(...)
-    latitude: float = Field(...)
-    longitude: float = Field(...)
-    intensity: float = Field(...)
-    duration: float = Field(...)
+    magnitude: float = Field(5.0, ge=1.0, le=9.5)
+    depth: float = Field(10.0, ge=1.0, le=700.0)
+    latitude: float = Field(22.57, ge=-90, le=90)
+    longitude: float = Field(88.36, ge=-180, le=180)
+    intensity: float = Field(50.0, ge=0, le=1000, description="Rainfall intensity in mm/day")
+    duration: float = Field(1.0, ge=0.5, le=30, description="Rainfall duration in days")
+    is_live: bool = Field(False, description="Fetch live Open-Meteo precipitation forecast")
+    target_date_offset: int = Field(0, ge=-3, le=3, description="Target date offset from today (-3 to +3)")
 
 @router.post("/simulate/rainfall")
 async def simulate_rainfall(params: RainfallInput):
@@ -49,7 +53,9 @@ async def simulate_rainfall(params: RainfallInput):
             run_rainfall_simulation,
             grid=grid,
             intensity=params.intensity,
-            duration=params.duration
+            duration=params.duration,
+            is_live=params.is_live,
+            target_date_offset=params.target_date_offset
         )
         return result
     except Exception as exc:
@@ -89,7 +95,9 @@ async def simulate_combined(params: CombinedInput):
             lat=params.latitude,
             lon=params.longitude,
             intensity=params.intensity,
-            duration=params.duration
+            duration=params.duration,
+            is_live=params.is_live,
+            target_date_offset=params.target_date_offset
         )
         return result
     except Exception as exc:

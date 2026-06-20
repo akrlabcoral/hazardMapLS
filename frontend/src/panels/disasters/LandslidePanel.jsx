@@ -15,6 +15,10 @@ export function LandslidePanel() {
     setRainfallIntensity,
     rainfallDuration,
     setRainfallDuration,
+    isLiveRainfall,
+    setIsLiveRainfall,
+    targetDateOffset,
+    setTargetDateOffset,
     earthquakeEpicenter, 
     isSimulationRunning, 
     clearSimulationState 
@@ -26,6 +30,10 @@ export function LandslidePanel() {
       setRainfallIntensity: s.setRainfallIntensity,
       rainfallDuration: s.rainfallDuration,
       setRainfallDuration: s.setRainfallDuration,
+      isLiveRainfall: s.isLiveRainfall,
+      setIsLiveRainfall: s.setIsLiveRainfall,
+      targetDateOffset: s.targetDateOffset,
+      setTargetDateOffset: s.setTargetDateOffset,
       earthquakeEpicenter: s.earthquakeEpicenter,
       isSimulationRunning: s.isSimulationRunning,
       clearSimulationState: s.clearSimulationState,
@@ -73,27 +81,69 @@ export function LandslidePanel() {
       {/* Conditional Inputs based on trigger type */}
       {(landslideType === 'rainfall' || landslideType === 'combined') && (
         <div className="p-3 bg-slate-800 rounded-lg border border-slate-700 space-y-3">
-          <label className="text-xs font-semibold text-slate-400 uppercase block">Rainfall Parameters</label>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-300">Intensity (mm/day)</span>
-              <input 
-                type="number" 
-                value={rainfallIntensity}
-                onChange={(e) => setRainfallIntensity(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-right text-slate-200"
-              />
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-300">Duration (days)</span>
-              <input 
-                type="number" 
-                value={rainfallDuration}
-                onChange={(e) => setRainfallDuration(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-right text-slate-200"
-              />
+          <div className="flex justify-between items-center mb-2">
+            <label className="text-xs font-semibold text-slate-400 uppercase">Rainfall Parameters</label>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-400">Live API Data</span>
+              <button
+                onClick={() => setIsLiveRainfall(!isLiveRainfall)}
+                className={`w-8 h-4 rounded-full transition-colors relative ${isLiveRainfall ? 'bg-blue-500' : 'bg-slate-600'}`}
+              >
+                <div className={`w-3 h-3 rounded-full bg-white absolute top-0.5 transition-transform ${isLiveRainfall ? 'left-auto right-0.5' : 'left-0.5'}`} />
+              </button>
             </div>
           </div>
+          
+          {isLiveRainfall ? (
+            <div className="p-2 bg-blue-900/20 border border-blue-500/30 rounded space-y-3">
+              <div className="text-center">
+                <CloudRain className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                <p className="text-[10px] text-blue-300 mb-2">Using live precipitation forecast from Open-Meteo.</p>
+              </div>
+              
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold text-[#f1f5f9]">Target Date</span>
+                  <span className="text-[12px] text-[#00d4ff] font-mono">
+                    {targetDateOffset === 0 ? "Today" : targetDateOffset < 0 ? `${Math.abs(targetDateOffset)} Days Ago` : `In ${targetDateOffset} Days`}
+                  </span>
+                </div>
+                <input 
+                  type="range" 
+                  min="-3" max="3" step="1" 
+                  value={targetDateOffset} 
+                  onChange={(e) => setTargetDateOffset(parseInt(e.target.value))}
+                  className="w-full accent-blue-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                />
+                <div className="flex justify-between mt-1 text-[9px] text-[#64748b]">
+                  <span>-3 Days</span>
+                  <span>Today</span>
+                  <span>+3 Days</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-300">Intensity (mm/day)</span>
+                <input 
+                  type="number" 
+                  value={rainfallIntensity}
+                  onChange={(e) => setRainfallIntensity(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                  className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-right text-slate-200"
+                />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-slate-300">Duration (days)</span>
+                <input 
+                  type="number" 
+                  value={rainfallDuration}
+                  onChange={(e) => setRainfallDuration(e.target.value === '' ? 0 : parseFloat(e.target.value))}
+                  className="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-right text-slate-200"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
