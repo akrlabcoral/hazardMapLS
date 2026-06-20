@@ -40,6 +40,56 @@ The current implementation focuses on simulating earthquakes affecting **West Be
 
 ---
 
+## 🚀 Getting Started
+
+### Prerequisites
+- **Docker Desktop** (or Docker Engine + Docker Compose)
+
+### Quick Start with Docker Compose
+
+```bash
+# Clone/navigate to the project directory
+cd hazardmap
+
+# Start all services (backend + frontend + PostgreSQL)
+docker-compose up --build
+```
+
+| Service | Port | URL |
+|---------|------|-----|
+| Frontend (React) | `5173` | `http://localhost:5173` |
+| Backend (FastAPI) | `8000` | `http://localhost:8000/docs` |
+| PostgreSQL | `5432` | (internal only) |
+
+```bash
+# Stop all services
+# Press Ctrl+C in the terminal, then:
+docker-compose down
+```
+
+### Development Mode (with Hot Reload)
+
+For active development with code changes reflected instantly:
+
+```bash
+# Start with mounted volumes for hot reload
+docker-compose up --build
+```
+
+The backend (`uvicorn --reload`) will auto-restart on Python file changes.
+The frontend (Vite) will hot-reload on React file changes.
+
+### Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Port `5432` already in use | Stop local PostgreSQL service, or change port mapping in `docker-compose.yml` |
+| `npm install` fails | Delete `node_modules` and `package-lock.json`, then rebuild |
+| 502 Bad Gateway | Ensure all containers are healthy: `docker-compose ps` |
+| Frontend can't reach backend | Check `VITE_SCIENTIFIC_API_URL` in `frontend/.env.local` |
+
+---
+
 ## 🛠️ Architecture & Tech Stack
 
 ### `backend/` (FastAPI + Python)
