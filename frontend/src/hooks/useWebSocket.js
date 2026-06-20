@@ -17,6 +17,7 @@ import useStore from '../store/useStore';
 export function useWebSocket() {
   const wsRef      = useRef(null);
   const retryRef   = useRef(null);
+  const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
 
   const setWsConnected     = useStore((s) => s.setWsConnected);
@@ -69,9 +70,15 @@ export function useWebSocket() {
 
   const connect = useCallback(() => {
     if (!mountedRef.current) return;
+    if (retryCountRef.current >= 5) {
+      console.log('[WS] Max retry attempts reached. Live events disabled.');
+      return;
+    }
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${protocol}//${location.host}/scientific-api/ws/live`;
+    // Connect directly to backend port 8000 to avoid Vite proxy WebSocket issues in Docker
+    const host = location.hostname;
+    const url = `${protocol}//${host}:8000/api/ws/live`;
 
     console.log('[WS] Connecting to', url);
     const ws = new WebSocket(url);
@@ -79,6 +86,7 @@ export function useWebSocket() {
 
     ws.onopen = () => {
       if (!mountedRef.current) return;
+      retryCountRef.current = 0; // Reset retries on success
       setWsConnected(true);
       console.log('[WS] Connected');
     };
@@ -95,8 +103,10 @@ export function useWebSocket() {
     ws.onclose = () => {
       setWsConnected(false);
       if (mountedRef.current) {
-        console.log('[WS] Disconnected — reconnecting in 3s...');
-        retryRef.current = setTimeout(connect, 3000);
+        retryCountRef.current += 1;
+        const delay = Math.min(3000 * retryCountRef.current, 30000); // Exponential backoff capped at 30s
+        console.log(`[WS] Disconnected — reconnecting in ${delay}ms... (attempt ${retryCountRef.current}/5)`);
+        retryRef.current = setTimeout(connect, delay);
       }
     };
 
