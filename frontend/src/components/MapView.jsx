@@ -773,85 +773,25 @@ export default function MapView() {
     if (mlSimulationData) {
       const isGrid = mlSimulationData.type === 'FeatureCollection';
       
-      // ── Heatwave: Render actual polygon cells as fill layer ──
-      if (activeModule === 'heatwave' && isGrid) {
-        if (wbGridSrc) {
-          wbGridSrc.setData(mlSimulationData);
+      // ── Hide WB_GRID_FILL for heatwave to keep map clean ──
+      if (activeModule === 'heatwave') {
+        if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
         }
-        
-        // Build color ramp based on selected heatwave layer
-        let colorRamp;
-        if (heatwaveActiveLayer === 'temperature') {
-          colorRamp = [
-            'interpolate', ['linear'], ['get', 'temperature'],
-            30, 'rgba(34, 197, 94, 0.35)',
-            32, 'rgba(74, 222, 128, 0.5)',
-            34, 'rgba(163, 230, 53, 0.6)',
-            36, 'rgba(250, 204, 21, 0.68)',
-            38, 'rgba(251, 146, 60, 0.75)',
-            40, 'rgba(249, 115, 22, 0.8)',
-            42, 'rgba(234, 88, 12, 0.85)',
-            44, 'rgba(220, 38, 38, 0.9)',
-            47, 'rgba(74, 4, 78, 0.95)'
-          ];
-        } else if (heatwaveActiveLayer === 'anomaly') {
-          colorRamp = [
-            'interpolate', ['linear'], ['get', 'anomaly'],
-            0, 'rgba(34, 197, 94, 0.35)',
-            2, 'rgba(250, 204, 21, 0.6)',
-            4, 'rgba(234, 88, 12, 0.78)',
-            6, 'rgba(220, 38, 38, 0.92)'
-          ];
-        } else {
-          // Heatwave status
-          colorRamp = [
-            'match', ['get', 'status'],
-            'Warm', 'rgba(34, 197, 94, 0.55)',
-            'Heatwave', 'rgba(234, 179, 8, 0.72)',
-            'Severe Heatwave', 'rgba(249, 115, 22, 0.82)',
-            'Extreme Heatwave', 'rgba(239, 68, 68, 0.92)',
-            'rgba(34, 197, 94, 0.25)'
-          ];
-        }
-        
-        // Zoom-dependent opacity: visible at all zooms, clearer when zoomed in
-        map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-color', colorRamp);
-        map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', [
-          'interpolate', ['linear'], ['zoom'],
-          0, 0.45,   // Country view: subtle but visible
-          4, 0.55,   // State view
-          8, 0.7,    // District view
-          12, 0.82   // City view: clearly visible
-        ]);
-        map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-outline-color', [
-          'interpolate', ['linear'], ['zoom'],
-          0, 'rgba(255,255,255,0.03)',
-          4, 'rgba(255,255,255,0.1)',
-          8, 'rgba(255,255,255,0.25)',
-          12, 'rgba(255,255,255,0.45)'
-        ]);
-        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
-        
-        // Hide heatmap/contours for heatwave (use fill layer instead)
-        if (map.current.getLayer('sim-ml-heatmap-layer')) {
-          map.current.setLayoutProperty('sim-ml-heatmap-layer', 'visibility', 'none');
-        }
-        if (map.current.getLayer('sim-ml-contours-layer')) {
-          map.current.setLayoutProperty('sim-ml-contours-layer', 'visibility', 'none');
-        }
-        heatmapSource.setData({ type: 'FeatureCollection', features: [] });
-        contoursSource.setData({ type: 'FeatureCollection', features: [] });
-      } else {
+      }
+
+      // ── Process Heatmap Features ──
         // ── Landslide/Earthquake: Keep existing point heatmap behavior ──
         const features = isGrid 
           ? mlSimulationData.features.map(f => {
               let val = 0;
               if (activeModule === 'heatwave' && heatwaveActiveLayer === 'temperature') {
                 const t = f.properties.temperature || 30;
-                val = Math.max(0, Math.min(1, (t - 30) / 18));
+                // Map 28 to 40 degrees to 0-1 range to make it pop
+                val = Math.max(0, Math.min(1, (t - 28) / 12));
               } else if (activeModule === 'heatwave' && heatwaveActiveLayer === 'anomaly') {
                 const a = f.properties.anomaly || 0;
-                val = Math.max(0, Math.min(1, a / 8));
+                val = Math.max(0, Math.min(1, a / 5)); // Map 0-5 anomaly to 0-1
               } else {
                 val = f.properties.hazard_probability ?? f.properties.fused_hazard ?? 0;
               }
@@ -860,7 +800,8 @@ export default function MapView() {
                 geometry: { type: 'Point', coordinates: [f.properties.centroid_lon, f.properties.centroid_lat] },
                 properties: { 
                   intensity: val,
-                  intensity_normalized: val * 0.05
+                  // Heatwave has 5x fewer grid points, so it needs a much higher normalization weight
+                  intensity_normalized: activeModule === 'heatwave' ? val * 0.5 : val * 0.05
                 }
               };
             })
@@ -894,7 +835,6 @@ export default function MapView() {
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
           map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
         }
-      }
     } else {
       mapLayerManager.clearSourcesData(map.current, ['sim-ml-heatmap-source', 'sim-ml-contours-source']);
       if (wbGridSrc) wbGridSrc.setData({ type: 'FeatureCollection', features: [] });
@@ -973,10 +913,9 @@ export default function MapView() {
       if (mlContoursVisible) map.current.moveLayer(contoursLayer);
     }
     
-    // For heatwave, WB_GRID_FILL is used as the fill layer instead of heatmap
+    // Keep WB_GRID_FILL hidden for heatwave
     if (activeModule === 'heatwave' && mapLayerManager.layerExists(map.current, SIM_LAYERS.WB_GRID_FILL)) {
-      map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
-      if (mlHeatmapVisible) map.current.moveLayer(SIM_LAYERS.WB_GRID_FILL);
+      map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
     }
   }, [mlHeatmapVisible, mlContoursVisible, mlSimulationData, isStyleLoaded, activeModule]);
 

@@ -133,26 +133,7 @@ export default function HeatwaveModule() {
              </label>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold text-[#f1f5f9] flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-[#eab308]" /> 
-                Forecast Duration
-              </span>
-              <span className="text-[12px] text-[#00d4ff] font-mono">{forecastDays} Days</span>
-            </div>
-            <input 
-              type="range" 
-              min="1" max="5" step="1" 
-              value={forecastDays} 
-              onChange={(e) => setForecastDays(parseInt(e.target.value))}
-              className="w-full accent-[#eab308] h-1.5 bg-white/[0.1] rounded-lg appearance-none cursor-pointer"
-            />
-            <div className="flex justify-between mt-1 text-[9px] text-[#64748b]">
-              <span>1 Day</span>
-              <span>5 Days</span>
-            </div>
-          </div>
+
 
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -205,27 +186,11 @@ export default function HeatwaveModule() {
           </div>
         )}
 
-        {/* Timeline Slider for Forecast Scrubbing */}
-        {simulationResults?.forecast && (
-          <div className="p-3 bg-[#0a0f1e]/50 rounded-lg border border-white/[0.06] space-y-2">
-            <h3 className="text-[11px] font-semibold text-[#f1f5f9] flex items-center justify-between mb-2">
-               <span className="flex items-center gap-1"><Activity className="w-3 h-3 text-[#00d4ff]"/> Forecast Timeline</span>
-               <span className="text-[#00d4ff] font-mono">Day {selectedDay}</span>
-            </h3>
-            <input 
-              type="range" 
-              min="1" max={simulationResults.forecast.length} step="1" 
-              value={selectedDay} 
-              onChange={(e) => setSelectedDay(parseInt(e.target.value))}
-              className="w-full accent-[#00d4ff] h-2 bg-white/[0.1] rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-        )}
 
         {/* Statistics Dashboard */}
         {currentResult?.state_summary && Object.keys(currentResult.state_summary).length > 0 && (
           <div className="p-3 bg-[#0a0f1e]/50 rounded-lg border border-white/[0.06] space-y-3">
-            <h3 className="text-[11px] font-semibold text-[#f1f5f9] uppercase tracking-wider mb-2">Impact Statistics (Day {selectedDay})</h3>
+            <h3 className="text-[11px] font-semibold text-[#f1f5f9] uppercase tracking-wider mb-2">Impact Statistics</h3>
             
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-white/[0.03] p-2 rounded border border-white/[0.05]">

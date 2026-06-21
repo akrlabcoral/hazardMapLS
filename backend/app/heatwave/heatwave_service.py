@@ -31,6 +31,22 @@ def fetch_live_forecast(cities):
         data = [data]
     return data
 
+_forecast_cache = {}
+
+def fetch_live_forecast_cached(cities):
+    """Fetch forecast with simple in-memory cache (5 min TTL)."""
+    cache_key = tuple((c["lat"], c["lon"]) for c in cities)
+    now = datetime.now().timestamp()
+    
+    if cache_key in _forecast_cache:
+        cached_data, timestamp = _forecast_cache[cache_key]
+        if now - timestamp < 300:  # 5 minutes
+            return cached_data
+    
+    data = fetch_live_forecast(cities)
+    _forecast_cache[cache_key] = (data, now)
+    return data
+
 def run_heatwave_simulation(
     grid: dict,
     is_live: bool,
@@ -47,6 +63,12 @@ def run_heatwave_simulation(
         baseline_cities = json.load(f)
         
     features = grid["features"]
+    
+    # ── Optimization: Subsample grid for heatwave (large-scale phenomena) ──
+    # Use every 5th cell (~25 km resolution) for faster interpolation
+    subsample_step = 5
+    features = features[::subsample_step]
+    
     lons = np.array([f["properties"]["centroid_lon"] for f in features], dtype=np.float64)
     lats = np.array([f["properties"]["centroid_lat"] for f in features], dtype=np.float64)
     
@@ -55,8 +77,7 @@ def run_heatwave_simulation(
     elevation_data = raster_engine._sample_raster(raster_engine.elev_path, lons, lats, nodata_val=0.0)
     elevation = np.nan_to_num(elevation_data, nan=0.0)
     
-    # Urban Mask (Synthesize from reference cities + standard radius)
-    # 0.2 degrees ≈ 22 km at the equator, ~20 km at Indian latitudes (~22°N)
+    # Urban Mask
     UHI_RADIUS_DEG = 0.2
     urban_mask = np.zeros_like(lons)
     if uhi_enabled:
@@ -66,30 +87,23 @@ def run_heatwave_simulation(
             
     # Calculate baseline normal temps for current month
     current_month = str(datetime.now().month)
-    base_coords = []
-    base_temps = []
+    base_coords = np.array([[c["lon"], c["lat"]] for c in baseline_cities])
+    base_temps = np.array([c["monthly_normals"][current_month] for c in baseline_cities])
     
-    for c in baseline_cities:
-        base_coords.append([c["lon"], c["lat"]])
-        base_temps.append(c["monthly_normals"][current_month])
-        
-    base_coords = np.array(base_coords)
-    baseline_temp = griddata(base_coords, np.array(base_temps), (lons, lats), method='linear')
+    baseline_temp = griddata(base_coords, base_temps, (lons, lats), method='linear')
     if np.isnan(baseline_temp).any():
-        baseline_temp_near = griddata(base_coords, np.array(base_temps), (lons, lats), method='nearest')
+        baseline_temp_near = griddata(base_coords, base_temps, (lons, lats), method='nearest')
         baseline_temp[np.isnan(baseline_temp)] = baseline_temp_near[np.isnan(baseline_temp)]
 
-    # Fetch Forecast Data
+    # Fetch Forecast Data (with caching)
     if is_live:
-        forecast_data = fetch_live_forecast(baseline_cities)
+        forecast_data = fetch_live_forecast_cached(baseline_cities)
     else:
         forecast_data = None
         
     daily_results = []
     num_days = min(5, duration_days)
     
-    # The forecast array has 7 days: [-3, -2, -1, 0, 1, 2, 3]
-    # Index 0 corresponds to -3. Index 3 is today (0).
     start_index = target_date_offset + 3
     if start_index < 0: start_index = 0
     if start_index > 6: start_index = 6
@@ -99,7 +113,7 @@ def run_heatwave_simulation(
         if forecast_day_index > 6:
             break
         
-        live_coords = []
+        live_coords = np.array([[c["lon"], c["lat"]] for c in baseline_cities])
         live_temps = []
         live_hums = []
         
@@ -118,18 +132,19 @@ def run_heatwave_simulation(
                 t = temperature
                 h = humidity
             
-            live_coords.append([c["lon"], c["lat"]])
             live_temps.append(t)
             live_hums.append(h)
-            
-        live_coords = np.array(live_coords)
-        live_temp = griddata(live_coords, np.array(live_temps), (lons, lats), method='linear')
-        live_hum = griddata(live_coords, np.array(live_hums), (lons, lats), method='linear')
+        
+        live_temps = np.array(live_temps)
+        live_hums = np.array(live_hums)
+        
+        live_temp = griddata(live_coords, live_temps, (lons, lats), method='linear')
+        live_hum = griddata(live_coords, live_hums, (lons, lats), method='linear')
         
         if np.isnan(live_temp).any():
-            live_temp[np.isnan(live_temp)] = griddata(live_coords, np.array(live_temps), (lons, lats), method='nearest')[np.isnan(live_temp)]
+            live_temp[np.isnan(live_temp)] = griddata(live_coords, live_temps, (lons, lats), method='nearest')[np.isnan(live_temp)]
         if np.isnan(live_hum).any():
-            live_hum[np.isnan(live_hum)] = griddata(live_coords, np.array(live_hums), (lons, lats), method='nearest')[np.isnan(live_hum)]
+            live_hum[np.isnan(live_hum)] = griddata(live_coords, live_hums, (lons, lats), method='nearest')[np.isnan(live_hum)]
             
         # Physics Engine
         wbgt, anomaly, adj_live_temp = calculate_wbgt_and_anomaly(
@@ -142,10 +157,17 @@ def run_heatwave_simulation(
         )
         
         risk_arr = np.zeros_like(wbgt)
-        day_features = copy.deepcopy(features)
         
-        for i, feat in enumerate(day_features):
-            p = feat["properties"]
+        # ── Optimization: Mutate features in-place instead of deepcopy ──
+        day_features = []
+        for i, feat in enumerate(features):
+            # Create a shallow copy with updated properties only
+            new_feat = {
+                "type": "Feature",
+                "geometry": feat["geometry"],
+                "properties": dict(feat["properties"])  # Shallow copy of properties
+            }
+            p = new_feat["properties"]
             w = float(wbgt[i])
             a = float(anomaly[i])
             t = float(adj_live_temp[i])
@@ -160,6 +182,7 @@ def run_heatwave_simulation(
             p["hazard_probability"] = risk_score
             p["fused_hazard"] = risk_score
             risk_arr[i] = risk_score
+            day_features.append(new_feat)
             
         contour_geojson = generate_contour_geojson(day_features, risk_arr)
         district_summary, state_summary = generate_statistics(day_features)
