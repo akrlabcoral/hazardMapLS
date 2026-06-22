@@ -73,9 +73,17 @@ export default function HeatwaveModule() {
       }
 
       const data = await response.json();
-      setSimulationResults(data);
       if (data.forecast && data.forecast.length > 0) {
-        setMlSimulationData(data.forecast[0].grid_geojson);
+        const day = data.forecast[0];
+        // Set simulationResults in same format as landslide so contour rendering works
+        setSimulationResults({
+          ...data,
+          grid_geojson: day.grid_geojson,
+          contour_geojson: day.contour_geojson,
+        });
+        setMlSimulationData(day.grid_geojson);
+      } else {
+        setSimulationResults(data);
       }
       setMlHeatmapVisible(true);
       setMlContoursVisible(true);

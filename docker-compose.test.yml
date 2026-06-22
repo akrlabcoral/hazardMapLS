@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hazardmap_test
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: hazardmap_test
+    ports:
+      - "5433:5432"
+
+  backend:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://hazardmap_test:test_password@db:5432/hazardmap_test
+      - ENV=test
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    command: ["python", "-m", "pytest", "tests/", "-v"]

@@ -55,7 +55,7 @@ def get_risk_score(classification: str) -> float:
     for map rendering gradients if needed.
     """
     mapping = {
-        "Normal": 0.1,
+        "Normal": 0.0,
         "Warm": 0.4,
         "Heatwave": 0.6,
         "Severe Heatwave": 0.8,

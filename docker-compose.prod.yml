@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  backend:
+    restart: always
+    environment:
+      - ENV=production
+      - LOG_LEVEL=WARNING
+
+  frontend:
+    restart: always
+
+  db:
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

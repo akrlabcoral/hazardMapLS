@@ -64,9 +64,8 @@ def run_heatwave_simulation(
         
     features = grid["features"]
     
-    # ── Optimization: Subsample grid for heatwave (large-scale phenomena) ──
-    # Use every 5th cell (~25 km resolution) for faster interpolation
-    subsample_step = 5
+    # ── Subsample step=2: dense enough for contiguous polygons, fast enough to not timeout ──
+    subsample_step = 2
     features = features[::subsample_step]
     
     lons = np.array([f["properties"]["centroid_lon"] for f in features], dtype=np.float64)

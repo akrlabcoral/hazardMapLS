@@ -170,7 +170,16 @@ export default function MapView() {
           0.8, 'rgba(239, 68, 68, 0.8)',
           1.0, 'rgba(185, 28, 28, 0.95)',
         ],
-        'fill-outline-color': 'rgba(255, 255, 255, 0.1)',
+        'fill-opacity': [
+          'interpolate', ['linear'], ['zoom'],
+          4, 0.3,
+          10, 0.8
+        ],
+        'fill-outline-color': [
+          'interpolate', ['linear'], ['zoom'],
+          4, 'rgba(255, 255, 255, 0.05)',
+          10, 'rgba(255, 255, 255, 0.4)'
+        ],
       }
     });
 
@@ -718,7 +727,15 @@ export default function MapView() {
 
           map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-color', colorRamp);
           map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
-          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', showGrid ? 1.0 : 0.0);
+          if (showGrid) {
+            map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', [
+              'interpolate', ['linear'], ['zoom'],
+              4, 0.3,
+              10, 0.8
+            ]);
+          } else {
+            map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
+          }
         }
         console.log('[MapView] Layers made visible:', SIM_LAYERS.CONTOUR_FILL, SIM_LAYERS.CONTOUR_STROKE);
 
@@ -773,38 +790,33 @@ export default function MapView() {
     if (mlSimulationData) {
       const isGrid = mlSimulationData.type === 'FeatureCollection';
       
-      // ── Hide WB_GRID_FILL for heatwave to keep map clean ──
       if (activeModule === 'heatwave') {
+        // Heatwave uses contour fill/stroke rendering (same as landslide rainfall)
+        // The contour data is fed via simulationResults.contour_geojson in the render effect above
+        // Here we just need to clear the point heatmap sources
+        heatmapSource.setData({ type: 'FeatureCollection', features: [] });
+        contoursSource.setData({ type: 'FeatureCollection', features: [] });
+        
+        // Hide WB_GRID_FILL for heatwave
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
           map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
         }
+        return;
       }
 
-      // ── Process Heatmap Features ──
-        // ── Landslide/Earthquake: Keep existing point heatmap behavior ──
-        const features = isGrid 
-          ? mlSimulationData.features.map(f => {
-              let val = 0;
-              if (activeModule === 'heatwave' && heatwaveActiveLayer === 'temperature') {
-                const t = f.properties.temperature || 30;
-                // Map 28 to 40 degrees to 0-1 range to make it pop
-                val = Math.max(0, Math.min(1, (t - 28) / 12));
-              } else if (activeModule === 'heatwave' && heatwaveActiveLayer === 'anomaly') {
-                const a = f.properties.anomaly || 0;
-                val = Math.max(0, Math.min(1, a / 5)); // Map 0-5 anomaly to 0-1
-              } else {
-                val = f.properties.hazard_probability ?? f.properties.fused_hazard ?? 0;
+      // ── Landslide/Earthquake: Keep existing point heatmap behavior ──
+      const features = isGrid 
+        ? mlSimulationData.features.map(f => {
+            const val = f.properties.hazard_probability ?? f.properties.fused_hazard ?? 0;
+            return {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [f.properties.centroid_lon, f.properties.centroid_lat] },
+              properties: { 
+                intensity: val,
+                intensity_normalized: val * 0.05
               }
-              return {
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [f.properties.centroid_lon, f.properties.centroid_lat] },
-                properties: { 
-                  intensity: val,
-                  // Heatwave has 5x fewer grid points, so it needs a much higher normalization weight
-                  intensity_normalized: activeModule === 'heatwave' ? val * 0.5 : val * 0.05
-                }
-              };
-            })
+            };
+          })
           : (mlSimulationData.length > 0 ? mlSimulationData.map(pt => ({
               type: 'Feature',
               geometry: { type: 'Point', coordinates: [pt.lng, pt.lat] },
@@ -856,46 +868,17 @@ export default function MapView() {
     if (!isStyleLoaded || !map.current) return;
     if (!mapLayerManager.layerExists(map.current, 'sim-ml-heatmap-layer')) return;
 
-    let colorRamp;
-    if (activeModule === 'heatwave' && heatwaveActiveLayer === 'temperature') {
-      colorRamp = [
-        'interpolate', ['linear'], ['heatmap-density'],
-        0.0, 'rgba(34,197,94,0)',
-        0.1, '#4ade80',
-        0.2, '#a3e635',
-        0.3, '#facc15',
-        0.4, '#fdba74',
-        0.5, '#fb923c',
-        0.6, '#f97316',
-        0.7, '#ea580c',
-        0.8, '#dc2626',
-        0.85, '#991b1b',
-        0.9, '#86198f',
-        0.95, '#701a75',
-        1.0, '#4a044e'
-      ];
-    } else if (activeModule === 'heatwave' && heatwaveActiveLayer === 'anomaly') {
-      colorRamp = [
-        'interpolate', ['linear'], ['heatmap-density'],
-        0.0, 'rgba(74,222,128,0)',
-        0.2, '#facc15',
-        0.4, '#ea580c',
-        0.6, '#dc2626',
-        0.8, '#991b1b'
-      ];
-    } else {
-      colorRamp = [
-        'interpolate', ['linear'], ['heatmap-density'],
-        0.0, 'rgba(16,185,129,0)',
-        0.1, 'rgba(16,185,129,0.2)',
-        0.3, '#10b981',
-        0.5, '#eab308',
-        0.7, '#f97316',
-        0.9, '#ef4444'
-      ];
-    }
+    const colorRamp = [
+      'interpolate', ['linear'], ['heatmap-density'],
+      0.0, 'rgba(16,185,129,0)',
+      0.1, 'rgba(16,185,129,0.2)',
+      0.3, '#10b981',
+      0.5, '#eab308',
+      0.7, '#f97316',
+      0.9, '#ef4444'
+    ];
     map.current.setPaintProperty('sim-ml-heatmap-layer', 'heatmap-color', colorRamp);
-  }, [activeModule, heatwaveActiveLayer, isStyleLoaded]);
+  }, [isStyleLoaded]);
 
   // Sync ML Layer Visibility
   useEffect(() => {
@@ -913,9 +896,17 @@ export default function MapView() {
       if (mlContoursVisible) map.current.moveLayer(contoursLayer);
     }
     
-    // Keep WB_GRID_FILL hidden for heatwave
-    if (activeModule === 'heatwave' && mapLayerManager.layerExists(map.current, SIM_LAYERS.WB_GRID_FILL)) {
-      map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+    // For heatwave, sync contour layers with mlHeatmapVisible toggle
+    if (activeModule === 'heatwave') {
+      if (mapLayerManager.layerExists(map.current, SIM_LAYERS.CONTOUR_FILL)) {
+        map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_FILL, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
+      }
+      if (mapLayerManager.layerExists(map.current, SIM_LAYERS.CONTOUR_STROKE)) {
+        map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
+      }
+      if (mapLayerManager.layerExists(map.current, SIM_LAYERS.WB_GRID_FILL)) {
+        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+      }
     }
   }, [mlHeatmapVisible, mlContoursVisible, mlSimulationData, isStyleLoaded, activeModule]);
 
