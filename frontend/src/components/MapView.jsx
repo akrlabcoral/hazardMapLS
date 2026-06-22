@@ -696,46 +696,17 @@ export default function MapView() {
           contourSrc.setData(simulationResults.contour_geojson);
         }
         
-        const showGrid = activeModule === 'earthquake' || isSeismicLandslide;
-        const showContours = !showGrid;
+        // ── Unified rendering: ALL modules use CONTOUR_FILL (smooth bands) ──
+        const showGrid = false; // Always use contours for unified visual language
+        const showContours = true;
         
         if (map.current.getLayer(SIM_LAYERS.CONTOUR_FILL))   map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_FILL,   'visibility', showContours ? 'visible' : 'none');
         if (map.current.getLayer(SIM_LAYERS.CONTOUR_STROKE)) map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', showContours ? 'visible' : 'none');
         
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
-          const propertyToUse = isSeismicLandslide ? 'susceptibility' : 'fused_hazard';
-          
-          const colorRamp = isSeismicLandslide 
-            ? [
-                'interpolate', ['linear'], ['get', propertyToUse],
-                0.0, 'rgba(34, 197, 94, 0.3)', // Visible green for 0 risk in affected area
-                0.2, 'rgba(34, 197, 94, 0.5)',
-                0.4, 'rgba(234, 179, 8, 0.6)',
-                0.6, 'rgba(249, 115, 22, 0.7)',
-                0.8, 'rgba(239, 68, 68, 0.8)',
-                1.0, 'rgba(185, 28, 28, 0.95)',
-              ]
-            : [
-                'interpolate', ['linear'], ['get', propertyToUse],
-                0.0, 'rgba(34, 197, 94, 0.0)', // Transparent for 0 risk outside
-                0.2, 'rgba(34, 197, 94, 0.5)',
-                0.4, 'rgba(234, 179, 8, 0.6)',
-                0.6, 'rgba(249, 115, 22, 0.7)',
-                0.8, 'rgba(239, 68, 68, 0.8)',
-                1.0, 'rgba(185, 28, 28, 0.95)',
-              ];
-
-          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-color', colorRamp);
-          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
-          if (showGrid) {
-            map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', [
-              'interpolate', ['linear'], ['zoom'],
-              4, 0.3,
-              10, 0.8
-            ]);
-          } else {
-            map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
-          }
+          // WB_GRID_FILL kept hidden; contours are the primary visual
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
         }
         console.log('[MapView] Layers made visible:', SIM_LAYERS.CONTOUR_FILL, SIM_LAYERS.CONTOUR_STROKE);
 
@@ -769,11 +740,9 @@ export default function MapView() {
       }
     };
 
-    if (map.current.isStyleLoaded()) {
-      updateSimulationResults();
-    } else {
-      map.current.once('styledata', updateSimulationResults);
-    }
+    // Always run immediately — isStyleLoaded() check causes race condition on first click
+    // The try/catch inside updateSimulationResults handles any timing issues
+    updateSimulationResults();
   }, [simulationResults, earthquakeEpicenter, activeModule, landslideType]);
 
   
