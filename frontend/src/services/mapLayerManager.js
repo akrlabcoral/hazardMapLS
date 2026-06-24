@@ -64,6 +64,15 @@ class MapLayerManager {
     }
   }
 
+  hideLayers(map, layerIds) {
+    if (!map || !map.getStyle()) return;
+    layerIds.forEach(id => {
+      if (this.layerExists(map, id)) {
+        map.setLayoutProperty(id, 'visibility', 'none');
+      }
+    });
+  }
+
   /**
    * Clears the data from the specified sources instead of removing them entirely.
    * This preserves the persistent source -> persistent layer architecture.
