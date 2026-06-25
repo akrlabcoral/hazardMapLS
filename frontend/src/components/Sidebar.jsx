@@ -5,6 +5,7 @@ import EarthquakeModule from './modules/EarthquakeModule';
 import LandslideModule from './modules/LandslideModule';
 
 import HeatwaveModule from './modules/HeatwaveModule';
+import TsunamiModule from './modules/TsunamiModule';
 
 export default function Sidebar() {
   const isSidebarOpen = useStore((state) => state.isSidebarOpen);
@@ -14,6 +15,7 @@ export default function Sidebar() {
     if (activeModule === 'earthquake') return <EarthquakeModule />;
     if (activeModule === 'landslide') return <LandslideModule />;
     if (activeModule === 'heatwave') return <HeatwaveModule />;
+    if (activeModule === 'tsunami') return <TsunamiModule />;
     return null;
   };
 

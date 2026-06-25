@@ -17,8 +17,8 @@ const useStore = create((set, get) => ({
   activeSection: null,
   setActiveSection: (section) => set((state) => ({ activeSection: state.activeSection === section ? null : section })),
 
-  mapStyle: 'dark',
-  toggleMapStyle: () => set((state) => ({ mapStyle: state.mapStyle === 'dark' ? 'light' : 'dark' })),
+  mapStyle: 'light',
+  toggleMapStyle: () => set((state) => ({ mapStyle: state.mapStyle === 'light' ? 'dark' : 'light' })),
 
   // Earthquake Simulation State
   isPlacingEpicenter: false,
@@ -261,6 +261,16 @@ const useStore = create((set, get) => ({
   // Auto-simulation toggle
   autoSimEnabled: true,
   setAutoSimEnabled: (val) => set({ autoSimEnabled: val }),
+
+  // ── Tsunami State ────────────────────────────────────────────────────────
+  tsunamiResult: null,
+  tsunamiSource: null,
+  setTsunamiResult: (result) => set({ tsunamiResult: result }),
+  setTsunamiSource: (source) => set({ tsunamiSource: source }),
+  clearTsunamiState: () => set({ tsunamiResult: null, tsunamiSource: null }),
+  
+  infoPanel: null,
+  setInfoPanel: (panel) => set({ infoPanel: panel }),
 }));
 
 export default useStore;

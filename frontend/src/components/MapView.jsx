@@ -311,7 +311,7 @@ export default function MapView() {
             source: 'osm-dark',
             minzoom: 0,
             maxzoom: 22,
-            layout: { visibility: 'visible' }
+            layout: { visibility: 'none' }
           },
           {
             id: 'osm-light-layer',
@@ -319,7 +319,7 @@ export default function MapView() {
             source: 'osm-light',
             minzoom: 0,
             maxzoom: 22,
-            layout: { visibility: 'none' }
+            layout: { visibility: 'visible' }
           }
         ]
       },

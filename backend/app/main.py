@@ -105,6 +105,9 @@ app.include_router(landslide_routes.router, prefix="/api/landslide")
 from app.heatwave import routes as heatwave_routes
 app.include_router(heatwave_routes.router, prefix="/api/heatwave")
 
+from app.tsunami import router as tsunami_router
+app.include_router(tsunami_router.router, prefix="/api/tsunami")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

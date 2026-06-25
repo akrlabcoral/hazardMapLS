@@ -2,6 +2,8 @@ import React from 'react';
 import useStore from '../../store/useStore';
 import { Layers } from 'lucide-react';
 import { DisastersPanel } from '../../panels/DisastersPanel';
+import LiveEventsPanel from '../../panels/LiveEventsPanel';
+import HistoricPanel from '../../panels/HistoricPanel';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import AlertBanner from '../AlertBanner';
 
@@ -30,6 +32,8 @@ export default function EarthquakeModule() {
 
       <div className="flex-1 overflow-y-auto pr-1 space-y-4">
         <DisastersPanel />
+        <LiveEventsPanel />
+        <HistoricPanel />
       </div>
     </div>
   );

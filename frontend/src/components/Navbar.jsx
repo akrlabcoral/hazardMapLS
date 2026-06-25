@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Bell, UserCircle, Menu, Moon, Sun, Globe, Mountain, ThermometerSun } from 'lucide-react';
+import { Shield, Bell, UserCircle, Menu, Moon, Sun, Globe, Mountain, ThermometerSun, Waves } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const STATUS_CONFIG = {
@@ -88,6 +88,20 @@ export default function Navbar() {
           <ThermometerSun className="w-4 h-4" />
           Heatwave
           {activeModule === 'heatwave' && (
+            <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#00d4ff] rounded-t-full animate-pulse" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveModule('tsunami')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative ${
+            activeModule === 'tsunami' 
+              ? 'text-[#00d4ff] bg-[#00d4ff]/10' 
+              : 'text-[#64748b] hover:text-[#f1f5f9] hover:bg-white/[0.05]'
+          }`}
+        >
+          <Waves className="w-4 h-4" />
+          Tsunami
+          {activeModule === 'tsunami' && (
             <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#00d4ff] rounded-t-full animate-pulse" />
           )}
         </button>
