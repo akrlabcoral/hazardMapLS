@@ -47,3 +47,4 @@ backend/data/simulations.db
 
 # Ignore large simulation response dumps
 response.json
+*.tif

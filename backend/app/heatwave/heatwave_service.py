@@ -21,7 +21,7 @@ BASELINE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "data", "hea
 def fetch_live_forecast(cities):
     lats = ",".join([str(c["lat"]) for c in cities])
     lons = ",".join([str(c["lon"]) for c in cities])
-    url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&daily=temperature_2m_max,relative_humidity_2m_mean&timezone=Asia/Kolkata&past_days=3&forecast_days=4"
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lats}&longitude={lons}&daily=apparent_temperature_max&timezone=Asia/Kolkata&past_days=3&forecast_days=4"
     
     r = requests.get(url, timeout=20)
     if r.status_code != 200:
@@ -52,8 +52,7 @@ def run_heatwave_simulation(
     is_live: bool,
     uhi_enabled: bool,
     duration_days: int,
-    temperature: float = 40.0,
-    humidity: float = 50.0,
+    apparent_temperature: float = 40.0,
     target_date_offset: int = 0
 ) -> dict:
     if not os.path.exists(BASELINE_PATH):
@@ -117,38 +116,34 @@ def run_heatwave_simulation(
         live_hums = []
         
         for i, c in enumerate(baseline_cities):
-            if forecast_data:
-                d = forecast_data[i]["daily"]
-                if forecast_day_index < len(d["temperature_2m_max"]):
-                    t = d["temperature_2m_max"][forecast_day_index]
-                    h = d["relative_humidity_2m_mean"][forecast_day_index]
+                if forecast_data:
+                    d = forecast_data[i]["daily"]
+                    if forecast_day_index < len(d.get("apparent_temperature_max", [])):
+                        t = d["apparent_temperature_max"][forecast_day_index]
+                    else:
+                        t = None
+                    if t is None: t = 35.0
                 else:
-                    t = None
-                    h = None
-                if t is None: t = 35.0
-                if h is None: h = 50.0
-            else:
-                t = temperature
-                h = humidity
-            
-            live_temps.append(t)
-            live_hums.append(h)
+                    t = apparent_temperature
+                
+                live_temps.append(t)
         
         live_temps = np.array(live_temps)
-        live_hums = np.array(live_hums)
         
         live_temp = griddata(live_coords, live_temps, (lons, lats), method='linear')
-        live_hum = griddata(live_coords, live_hums, (lons, lats), method='linear')
         
         if np.isnan(live_temp).any():
-            live_temp[np.isnan(live_temp)] = griddata(live_coords, live_temps, (lons, lats), method='nearest')[np.isnan(live_temp)]
-        if np.isnan(live_hum).any():
-            live_hum[np.isnan(live_hum)] = griddata(live_coords, live_hums, (lons, lats), method='nearest')[np.isnan(live_hum)]
+            live_temp_near = griddata(live_coords, live_temps, (lons, lats), method='nearest')
+            live_temp[np.isnan(live_temp)] = live_temp_near[np.isnan(live_temp)]
+            
+        # Add UHI effect to apparent temperature
+        if uhi_enabled:
+            live_temp += (urban_mask * 2.5)
             
         # Physics Engine
         wbgt, anomaly, adj_live_temp = calculate_wbgt_and_anomaly(
             live_temp=live_temp,
-            live_humidity=live_hum,
+            live_humidity=np.zeros_like(live_temp),
             baseline_temp=baseline_temp,
             elevation=elevation,
             duration_days=(day_idx + 1),

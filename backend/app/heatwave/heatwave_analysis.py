@@ -6,12 +6,13 @@ def calculate_wbgt_and_anomaly(live_temp: np.ndarray, live_humidity: np.ndarray,
     
     1. Base temperature is adjusted by the Environmental Lapse Rate (-6.5°C per 1000m).
     2. Urban Heat Island (UHI) penalty is applied (+3°C to +5°C in urban mask areas).
-    3. Stull's empirical formula calculates Wet-Bulb Temperature (WBGT) from Temp and Humidity.
-    4. Anomaly is calculated: (Adjusted Live Temp) - (Adjusted Baseline Temp).
+    3. The input `live_temp` is now Apparent Temperature (Thermal Comfort Index), which natively accounts for humidity and wind.
+    4. Anomaly is calculated: (Adjusted Apparent Temp) - (Adjusted Baseline Temp).
     5. The 2-Day rule compounds heat stress if duration > 2 days.
     """
     
     # 1. Elevation Mitigation (applies to both live and baseline)
+    
     lapse_rate = (elevation / 1000.0) * 6.5
     adj_live_temp = live_temp - lapse_rate
     adj_baseline_temp = baseline_temp - lapse_rate
@@ -21,17 +22,10 @@ def calculate_wbgt_and_anomaly(live_temp: np.ndarray, live_humidity: np.ndarray,
     uhi_penalty = urban_mask * 3.5
     adj_live_temp += uhi_penalty
     
-    # 3. Wet-Bulb Globe Temperature (WBGT) via simplified Stull's Formula
-    # T * arctan(0.151977 * sqrt(rh% + 8.313659)) + arctan(T + rh%) - arctan(rh% - 1.676331) + 0.00391838 * (rh%)^(3/2) * arctan(0.023101 * rh%) - 4.686035
-    T = adj_live_temp
-    RH = np.clip(live_humidity, 0.0, 100.0)
-    
-    term1 = T * np.arctan(0.151977 * np.sqrt(RH + 8.313659))
-    term2 = np.arctan(T + RH)
-    term3 = -np.arctan(RH - 1.676331)
-    term4 = 0.00391838 * np.power(RH, 1.5) * np.arctan(0.023101 * RH)
-    
-    wbgt = term1 + term2 + term3 + term4 - 4.686035
+    # 3. Thermal Comfort Index (Apparent Temperature)
+    # Since we are now using Apparent Temperature, we don't need Stull's formula.
+    # The Apparent Temperature already accurately reflects the human-perceived heat stress.
+    wbgt = adj_live_temp
     
     # 4. Calculate True Anomaly
     anomaly = adj_live_temp - adj_baseline_temp

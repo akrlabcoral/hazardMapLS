@@ -118,6 +118,21 @@ def init_db() -> None:
                 )
             """)
 
+            # Early warnings table for predictive alerts
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS early_warnings (
+                    id              SERIAL PRIMARY KEY,
+                    hazard_type     TEXT NOT NULL,
+                    severity        TEXT NOT NULL,
+                    latitude        REAL NOT NULL,
+                    longitude       REAL NOT NULL,
+                    place_name      TEXT NOT NULL,
+                    target_date     TEXT NOT NULL,
+                    message         TEXT,
+                    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             # Indexes
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS idx_simulations_timestamp
@@ -370,6 +385,66 @@ def cleanup_old_data() -> None:
                 DELETE FROM dedup_cache
                 WHERE seen_at < NOW() - INTERVAL '1 day'
             """)
+            cur.execute("""
+                DELETE FROM early_warnings
+                WHERE created_at < NOW() - INTERVAL '7 days'
+            """)
+
+# ---------------------------------------------------------------------------
+# Early Warnings CRUD
+# ---------------------------------------------------------------------------
+def save_early_warning(
+    hazard_type: str,
+    severity: str,
+    latitude: float,
+    longitude: float,
+    place_name: str,
+    target_date: str,
+    message: str,
+) -> int:
+    """Save a new early warning prediction."""
+    with _get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO early_warnings (
+                    hazard_type, severity, latitude, longitude,
+                    place_name, target_date, message
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (hazard_type, severity, latitude, longitude, place_name, target_date, message))
+            conn.commit()
+            return cur.fetchone()[0]
+
+
+def get_recent_early_warnings(limit: int = 50) -> list[dict]:
+    """Fetch the most recent early warnings, ordered by creation date."""
+    with _get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT
+                    id, hazard_type, severity, latitude, longitude,
+                    place_name, target_date, message, created_at
+                FROM early_warnings
+                ORDER BY created_at DESC
+                LIMIT %s
+            """, (limit,))
+            
+            warnings = []
+            for row in cur.fetchall():
+                warnings.append({
+                    "id": row[0],
+                    "hazard_type": row[1],
+                    "severity": row[2],
+                    "latitude": row[3],
+                    "longitude": row[4],
+                    "place_name": row[5],
+                    "target_date": row[6],
+                    "message": row[7],
+                    "created_at": row[8].isoformat() if row[8] else None,
+                })
+            return warnings
+
 
 
 # ---------------------------------------------------------------------------

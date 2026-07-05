@@ -25,14 +25,21 @@ def generate_statistics(grid_features: list) -> tuple[list[dict], dict[str, dict
         is_heatwave = status in ["Heatwave", "Severe Heatwave", "Extreme Heatwave"]
         
         if district_name not in _UNKNOWN:
-            d = district_scores.setdefault(district_name, {"max_wbgt": -999.0, "pop_at_risk": 0})
-            if wbgt > d["max_wbgt"]: d["max_wbgt"] = wbgt
+            d = district_scores.setdefault(district_name, {"max_wbgt": -999.0, "pop_at_risk": 0, "status": "Normal"})
+            if wbgt > d["max_wbgt"]: 
+                d["max_wbgt"] = wbgt
+                # Update status if this cell's status is worse (rough proxy by checking if it's heatwave)
+                if is_heatwave:
+                    d["status"] = status
             if is_critical: d["pop_at_risk"] += pop_in_cell
 
         if state_name not in _UNKNOWN:
-            s = state_scores.setdefault(state_name, {"max_wbgt": -999.0, "pop_at_risk": 0, "total_cells": 0, "heatwave_cells": 0})
+            s = state_scores.setdefault(state_name, {"max_wbgt": -999.0, "pop_at_risk": 0, "total_cells": 0, "heatwave_cells": 0, "status": "Normal"})
             s["total_cells"] += 1
-            if wbgt > s["max_wbgt"]: s["max_wbgt"] = wbgt
+            if wbgt > s["max_wbgt"]: 
+                s["max_wbgt"] = wbgt
+                if is_heatwave:
+                    s["status"] = status
             if is_critical: s["pop_at_risk"] += pop_in_cell
             if is_heatwave: s["heatwave_cells"] += 1
 
@@ -42,7 +49,10 @@ def generate_statistics(grid_features: list) -> tuple[list[dict], dict[str, dict
         district_summary.append({
             "district": k,
             "max_wbgt": v["max_wbgt"],
-            "pop_at_risk": v["pop_at_risk"]
+            "pop_at_risk": v["pop_at_risk"],
+            "status": v["status"],
+            "lat": 20.0, # Dummy lat/lon since frontend/DB needs it
+            "lon": 80.0
         })
 
     state_summary = {}

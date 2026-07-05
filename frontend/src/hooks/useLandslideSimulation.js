@@ -3,12 +3,6 @@ import useStore from '../store/useStore';
 
 export function useLandslideSimulation() {
   const {
-    landslideType,
-    earthquakeEpicenter,
-    earthquakeMagnitude,
-    earthquakeDepth,
-    gmpeParams,
-    useCustomGmpe,
     rainfallIntensity,
     rainfallDuration,
     setSimulationResults,
@@ -18,13 +12,6 @@ export function useLandslideSimulation() {
   } = useStore();
 
   const handleRunSimulation = useCallback(async () => {
-    if (landslideType !== 'rainfall' && !earthquakeEpicenter) {
-      if (activeAlert?.type !== 'info') {
-        setActiveAlert({ type: 'info', message: 'Please drop a pin on the map to set the earthquake epicenter first.' });
-      }
-      return;
-    }
-
     setIsSimulationRunning(true);
     useStore.setState({
       activeAlert: null,
@@ -38,39 +25,13 @@ export function useLandslideSimulation() {
     useStore.getState().setCurrentSimAbortController(abortController);
 
     try {
-      let endpoint = '';
-      let payload = {};
-
-      if (landslideType === 'rainfall') {
-        endpoint = '/api/landslide/simulate/rainfall';
-        payload = {
-          intensity: rainfallIntensity,
-          duration: rainfallDuration,
-          is_live: useStore.getState().isLiveRainfall,
-          target_date_offset: useStore.getState().targetDateOffset
-        };
-      } else if (landslideType === 'earthquake') {
-        endpoint = '/api/landslide/simulate/earthquake';
-        payload = {
-          magnitude: earthquakeMagnitude,
-          depth: earthquakeDepth,
-          latitude: earthquakeEpicenter.lat,
-          longitude: earthquakeEpicenter.lng
-        };
-      } else if (landslideType === 'combined') {
-        endpoint = '/api/landslide/simulate/combined';
-        payload = {
-          intensity: rainfallIntensity,
-          duration: rainfallDuration,
-          magnitude: earthquakeMagnitude,
-          depth: earthquakeDepth,
-          latitude: earthquakeEpicenter.lat,
-          longitude: earthquakeEpicenter.lng,
-          gmpe_model: useStore.getState().gmpeModel,
-          is_live: useStore.getState().isLiveRainfall,
-          target_date_offset: useStore.getState().targetDateOffset
-        };
-      }
+      const endpoint = '/api/landslide/simulate/rainfall';
+      const payload = {
+        intensity: rainfallIntensity,
+        duration: rainfallDuration,
+        is_live: useStore.getState().isLiveRainfall,
+        target_date_offset: useStore.getState().targetDateOffset
+      };
 
       const response = await fetch(endpoint.replace('/api', '/scientific-api'), {
         method: 'POST',
@@ -111,8 +72,6 @@ export function useLandslideSimulation() {
       useStore.getState().setCurrentSimAbortController(null);
     }
   }, [
-    landslideType, 
-    earthquakeEpicenter, 
     rainfallIntensity, 
     rainfallDuration, 
     setSimulationResults, 

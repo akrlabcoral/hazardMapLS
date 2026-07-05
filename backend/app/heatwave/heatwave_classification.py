@@ -25,22 +25,22 @@ def classify_heatwave(wbgt: float, anomaly: float, max_temp: float, elevation: f
     """
     
     # 1. Global Lethality Override (WBGT physics)
-    if wbgt >= 35.0:
+    if wbgt >= 33.0:
         return "Extreme Heatwave"
         
     is_hilly = elevation >= 1000.0
     
     if is_hilly:
-        if max_temp >= 30.0:
-            if anomaly > 6.4:
+        if max_temp >= 25.0:
+            if anomaly > 4.0:
                 return "Severe Heatwave"
-            elif anomaly >= 4.5:
+            elif anomaly >= 2.0:
                 return "Heatwave"
     else:
-        if max_temp >= 40.0:
-            if anomaly > 6.4 or max_temp >= 47.0:
+        if max_temp >= 35.0:
+            if anomaly > 4.0 or max_temp >= 40.0:
                 return "Severe Heatwave"
-            elif anomaly >= 4.5 or max_temp >= 45.0:
+            elif anomaly >= 2.0 or max_temp >= 38.0:
                 return "Heatwave"
 
     # Fallback to general warming if below thresholds but WBGT or Temp is still uncomfortable

@@ -38,7 +38,7 @@ export default function MapView() {
   const heatwaveActiveLayer = useStore((state) => state.heatwaveActiveLayer);
   const mapClearToken = useStore((state) => state.mapClearToken);
   const activeModule = useStore((state) => state.activeModule);
-  const landslideType = useStore((state) => state.landslideType);
+  // landslideType removed
   const [isStyleLoaded, setIsStyleLoaded] = useState(false);
 
   const mapStyle          = useStore((state) => state.mapStyle);
@@ -396,6 +396,11 @@ export default function MapView() {
       const activeModule = useStore.getState().activeModule;
       const p = e.features[0].properties;
 
+      // Ignore contour clicks since they only contain geometry levels, not full data
+      if (e.features[0].layer.id === SIM_LAYERS.CONTOUR_FILL || e.features[0].layer.id === SIM_LAYERS.CONTOUR_STROKE) {
+        return;
+      }
+
       if (activeModule === 'heatwave') {
         new maplibregl.Popup({ maxWidth: '280px' })
           .setLngLat(e.lngLat)
@@ -688,7 +693,7 @@ export default function MapView() {
         console.log('[MapView] Grid features count:', simulationResults.grid_geojson.features?.length);
 
         let gridData = simulationResults.grid_geojson;
-        const isSeismicLandslide = activeModule === 'landslide' && landslideType === 'earthquake';
+        const isSeismicLandslide = false;
 
         // The backend now pre-filters features to the affected radius
         wbGridSrc.setData(gridData);
@@ -704,8 +709,8 @@ export default function MapView() {
         if (map.current.getLayer(SIM_LAYERS.CONTOUR_STROKE)) map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', showContours ? 'visible' : 'none');
         
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
-          // WB_GRID_FILL kept hidden; contours are the primary visual
-          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+          // WB_GRID_FILL kept transparent but visible so it remains clickable for popups!
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', showContours ? 'visible' : 'none');
           map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
         }
         console.log('[MapView] Layers made visible:', SIM_LAYERS.CONTOUR_FILL, SIM_LAYERS.CONTOUR_STROKE);
@@ -743,7 +748,7 @@ export default function MapView() {
     // Always run immediately — isStyleLoaded() check causes race condition on first click
     // The try/catch inside updateSimulationResults handles any timing issues
     updateSimulationResults();
-  }, [simulationResults, earthquakeEpicenter, activeModule, landslideType]);
+  }, [simulationResults, earthquakeEpicenter, activeModule]);
 
   
   // Sync ML Heatmap & Contours Data
@@ -766,9 +771,10 @@ export default function MapView() {
         heatmapSource.setData({ type: 'FeatureCollection', features: [] });
         contoursSource.setData({ type: 'FeatureCollection', features: [] });
         
-        // Hide WB_GRID_FILL for heatwave
+        // WB_GRID_FILL kept transparent but visible so it remains clickable for popups!
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
-          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
+          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
         }
         return;
       }
@@ -814,7 +820,8 @@ export default function MapView() {
         // Hide the grid layer for heatmap mode
         if (wbGridSrc) wbGridSrc.setData({ type: 'FeatureCollection', features: [] });
         if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
-          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+          map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
+          map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
         }
     } else {
       mapLayerManager.clearSourcesData(map.current, ['sim-ml-heatmap-source', 'sim-ml-contours-source']);
@@ -827,7 +834,8 @@ export default function MapView() {
         map.current.setLayoutProperty('sim-ml-contours-layer', 'visibility', 'none');
       }
       if (map.current.getLayer(SIM_LAYERS.WB_GRID_FILL)) {
-        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'visible');
+        map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
       }
     }
   }, [mlSimulationData, isStyleLoaded, heatwaveActiveLayer, activeModule]);
@@ -874,7 +882,8 @@ export default function MapView() {
         map.current.setLayoutProperty(SIM_LAYERS.CONTOUR_STROKE, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
       }
       if (mapLayerManager.layerExists(map.current, SIM_LAYERS.WB_GRID_FILL)) {
-        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', 'none');
+        map.current.setLayoutProperty(SIM_LAYERS.WB_GRID_FILL, 'visibility', mlHeatmapVisible ? 'visible' : 'none');
+        map.current.setPaintProperty(SIM_LAYERS.WB_GRID_FILL, 'fill-opacity', 0.0);
       }
     }
   }, [mlHeatmapVisible, mlContoursVisible, mlSimulationData, isStyleLoaded, activeModule]);

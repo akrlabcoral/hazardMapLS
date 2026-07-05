@@ -27,6 +27,8 @@ export default function Navbar() {
   const toggleMapStyle = useStore((state) => state.toggleMapStyle);
   const activeModule = useStore((state) => state.activeModule);
   const setActiveModule = useStore((state) => state.setActiveModule);
+  const activeSection = useStore((state) => state.activeSection);
+  const setActiveSection = useStore((state) => state.setActiveSection);
 
   return (
     <nav className="h-16 glass-panel flex items-center justify-between px-6 z-50 relative border-b-0 rounded-none shadow-sm">
@@ -104,7 +106,11 @@ export default function Navbar() {
         >
           {mapStyle === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        <button className="relative text-[#64748b] hover:text-[#f1f5f9] transition-colors">
+        <button 
+          onClick={() => setActiveSection(activeSection === 'alerts' ? null : 'alerts')}
+          className={`relative transition-colors ${activeSection === 'alerts' ? 'text-[#00d4ff]' : 'text-[#64748b] hover:text-[#f1f5f9]'}`}
+          title="AI Early Warnings"
+        >
           <Bell className="w-4 h-4" />
           <span className="absolute -top-1 -right-1 w-1.5 h-1.5 bg-[#dc2626] rounded-full"></span>
         </button>

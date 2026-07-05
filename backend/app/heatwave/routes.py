@@ -19,8 +19,7 @@ except Exception as exc:
     logger.error(f"[HeatwaveRoutes] Failed to load grid: {exc}")
 
 class HeatwaveInput(BaseModel):
-    temperature: float = Field(40.0, description="Base Temperature in Celsius (if not live)")
-    humidity: float = Field(50.0, description="Relative Humidity percentage (if not live)")
+    apparent_temperature: float = Field(40.0, description="Apparent Temperature (Thermal Comfort Index) in Celsius (if not live)")
     duration_days: int = Field(5, ge=1, le=5, description="Days to forecast")
     is_live: bool = Field(True, description="Fetch live Open-Meteo data")
     uhi_enabled: bool = Field(False, description="Apply Urban Heat Island penalty")
@@ -39,8 +38,7 @@ async def simulate_heatwave(params: HeatwaveInput):
             is_live=params.is_live,
             uhi_enabled=params.uhi_enabled,
             duration_days=params.duration_days,
-            temperature=params.temperature,
-            humidity=params.humidity,
+            apparent_temperature=params.apparent_temperature,
             target_date_offset=params.target_date_offset
         )
         return result

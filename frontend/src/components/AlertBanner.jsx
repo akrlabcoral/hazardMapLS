@@ -22,8 +22,29 @@ export default function AlertBanner() {
 
   if (!activeAlert) return null;
 
-  const mag = activeAlert.magnitude;
-  const isExtreme = mag >= 6.0;
+  const mag = activeAlert.magnitude || 0;
+  const isExtreme = (activeAlert.magnitude && mag >= 6.0) || 
+                    (activeAlert.hazard_type && activeAlert.severity.includes('Extreme'));
+
+  // Title formatting based on type
+  let title = '';
+  let subtitle = '';
+  let isPrediction = false;
+
+  if (activeAlert.hazard_type) {
+    isPrediction = true;
+    title = `PREDICTION: ${activeAlert.severity} ${activeAlert.hazard_type.toUpperCase()}`;
+    subtitle = `${activeAlert.place_name || ''} on ${activeAlert.target_date}`;
+  } else if (activeAlert.type === 'error') {
+    title = 'Error';
+    subtitle = activeAlert.message;
+  } else if (activeAlert.magnitude) {
+    title = `M${mag.toFixed(1)} Earthquake`;
+    subtitle = activeAlert.place ? ` — ${activeAlert.place}` : '';
+  } else {
+    title = 'Alert';
+    subtitle = activeAlert.message || '';
+  }
 
   return (
     <div style={{
@@ -61,9 +82,9 @@ export default function AlertBanner() {
 
       {/* Icon + text */}
       <span>
-        ⚠ <strong>M{mag.toFixed(1)} Earthquake</strong>
-        {activeAlert.place ? ` — ${activeAlert.place}` : ''}
-        {' — Simulation running...'}
+        ⚠ <strong>{title}</strong>
+        {subtitle ? ` — ${subtitle}` : ''}
+        {isPrediction ? ' — AI Early Warning!' : (activeAlert.magnitude ? ' — Simulation running...' : '')}
       </span>
 
       {/* Dismiss */}

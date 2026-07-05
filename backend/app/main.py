@@ -19,13 +19,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import simulate, export
+from app.api import simulate, export, alerts
 from app.api import ws as ws_module
 from app.api import events as events_module
 from app.soil import cache as soil_cache
 from app.soil.loader import load_all_soil_rasters
 from app.models.repository import close_pool, cleanup_old_data
 from app.ingest.poller import run_poller, run_ncs_poller
+from app.ingest.predictions import run_predictions_poller
 from app.jobs.queue import run_worker, get_queue
 
 
@@ -59,10 +60,11 @@ async def lifespan(app: FastAPI):
     # Start background tasks
     usgs_poller_task = asyncio.create_task(run_poller(queue),      name="usgs_poller")
     ncs_poller_task  = asyncio.create_task(run_ncs_poller(queue),  name="ncs_poller")
-    worker_task      = asyncio.create_task(run_worker(),           name="sim_worker")
+    predictions_task = asyncio.create_task(run_predictions_poller(queue), name="predictions_poller")
+    worker_task      = asyncio.create_task(run_worker(),           name="ws_worker")
     cleanup_task     = asyncio.create_task(_run_daily_cleanup(),   name="db_cleanup")
     
-    _bg_tasks.extend([usgs_poller_task, ncs_poller_task, worker_task, cleanup_task])
+    _bg_tasks.extend([usgs_poller_task, ncs_poller_task, predictions_task, worker_task, cleanup_task])
     print("[Startup] USGS poller, NCS poller, simulation worker, and daily cleanup task started.")
 
     yield
@@ -94,10 +96,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(simulate.router,       prefix="/api")
-app.include_router(export.router,         prefix="/api")
-app.include_router(ws_module.router,      prefix="/api")
-app.include_router(events_module.router,  prefix="/api")
+app.include_router(simulate.router, prefix="/api", tags=["Simulate"])
+app.include_router(export.router, prefix="/api", tags=["Export"])
+app.include_router(ws_module.router, prefix="/api", tags=["WebSocket"])
+app.include_router(events_module.router, prefix="/api", tags=["Events"])
+app.include_router(alerts.router, prefix="/api/alerts", tags=["Alerts"])
 
 from app.landslide import routes as landslide_routes
 app.include_router(landslide_routes.router, prefix="/api/landslide")

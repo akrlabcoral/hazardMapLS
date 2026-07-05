@@ -17,8 +17,10 @@ export default function MapLegend() {
   const showLandslideEvents = activeModule === 'landslide' && gisLayers.landslides;
   const showLandslideSoil = activeModule === 'landslide' && gisLayers.soilMoisture;
   const showLandslideDEM = activeModule === 'landslide' && gisLayers.slopeRisk;
+  const showLandslideSim = activeModule === 'landslide' && simulationResults !== null;
+  const showHeatwaveSim = activeModule === 'heatwave' && simulationResults !== null;
 
-  const hasAnyLegend = showEarthquakeBase || showEarthquakePGA || showLandslideEvents || showLandslideSoil || showLandslideDEM;
+  const hasAnyLegend = showEarthquakeBase || showEarthquakePGA || showLandslideEvents || showLandslideSoil || showLandslideDEM || showLandslideSim || showHeatwaveSim;
 
   // Completely hide the component if there is nothing to show
   if (!hasAnyLegend) return null;
@@ -49,7 +51,21 @@ export default function MapLegend() {
               exit={{ opacity: 0 }}
               className="p-4 text-xs space-y-4"
             >
-              {activeModule === 'earthquake' ? (
+              {activeModule === 'heatwave' ? (
+                <>
+                  {showHeatwaveSim && (
+                    <div>
+                      <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Heatwave Severity</div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#ef4444]"></div><span className="text-[#f1f5f9]">Extreme Heatwave</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#f97316]"></div><span className="text-[#f1f5f9]">Severe Heatwave</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#eab308]"></div><span className="text-[#f1f5f9]">Heatwave</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded border border-white/[0.2]"></div><span className="text-[#f1f5f9]">Normal</span></div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : activeModule === 'earthquake' ? (
                 <>
                   {showEarthquakeBase && (
                     <div className="space-y-2">
@@ -110,6 +126,18 @@ export default function MapLegend() {
                       <div className="flex justify-between text-[10px] text-[#64748b]">
                         <span>Dry (0.0)</span>
                         <span>Saturated (0.5+)</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {showLandslideSim && (
+                    <div className={(showLandslideEvents || showLandslideDEM || showLandslideSoil) ? "pt-3 border-t border-white/[0.06]" : ""}>
+                      <div className="text-[10px] text-[#64748b] uppercase tracking-wider mb-2">Landslide Risk Level</div>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#ef4444]"></div><span className="text-[#f1f5f9]">Extreme (80-100%)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#f97316]"></div><span className="text-[#f1f5f9]">Severe (60-80%)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#eab308]"></div><span className="text-[#f1f5f9]">Moderate (40-60%)</span></div>
+                        <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-[#22c55e]"></div><span className="text-[#f1f5f9]">Low (0-40%)</span></div>
                       </div>
                     </div>
                   )}

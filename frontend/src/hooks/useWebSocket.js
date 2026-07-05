@@ -60,8 +60,8 @@ export function useWebSocket() {
     mountedRef.current = true;
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = location.hostname;
-    const url = `${protocol}//${host}:8000/api/ws/live`;
+    const host = location.host; // includes port if any
+    const url = `${protocol}//${host}/scientific-api/ws/live`;
 
     let ws;
     try {

@@ -53,8 +53,7 @@ export default function HeatwaveModule() {
           is_live: isLiveMode,
           uhi_enabled: uhiEnabled,
           duration_days: forecastDays,
-          temperature: customTemp,
-          humidity: customHum,
+          apparent_temperature: customTemp,
           target_date_offset: targetDateOffset
         }),
         signal: abortControllerRef.current.signal
@@ -171,17 +170,10 @@ export default function HeatwaveModule() {
             <div className="space-y-4 pt-3 border-t border-white/[0.06]">
               <div>
                 <div className="flex justify-between text-[11px] text-[#94a3b8] mb-1">
-                  <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3"/> Base Temp</span> 
+                  <span className="flex items-center gap-1"><ThermometerSun className="w-3 h-3"/> Apparent Temp / UTCI</span> 
                   <span>{customTemp}°C</span>
                 </div>
                 <input type="range" min="30" max="55" step="0.5" value={customTemp} onChange={(e)=>setCustomTemp(parseFloat(e.target.value))} className="w-full accent-[#f97316] h-1.5" />
-              </div>
-              <div>
-                <div className="flex justify-between text-[11px] text-[#94a3b8] mb-1">
-                  <span className="flex items-center gap-1"><Droplets className="w-3 h-3"/> Humidity</span> 
-                  <span>{customHum}%</span>
-                </div>
-                <input type="range" min="10" max="100" value={customHum} onChange={(e)=>setCustomHum(parseFloat(e.target.value))} className="w-full accent-[#00d4ff] h-1.5" />
               </div>
             </div>
           )}
