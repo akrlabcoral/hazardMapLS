@@ -59,7 +59,8 @@ async def simulate_earthquake(params: EarthquakeInput):
         )
         return result
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.exception(f"[Simulate] Earthquake simulation failed: {exc}")
+        raise HTTPException(status_code=500, detail="Simulation failed. Please try again later.")
 
 @router.get("/region")
 async def get_region(lat: float, lon: float):

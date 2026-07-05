@@ -37,11 +37,5 @@ def get_event(event_id: int):
 
 @router.get("/health")
 def health():
-    """System health — poller status, queue depth, WS clients."""
-    return {
-        "status": "ok",
-        "poller": poller_stats,
-        "queue_depth": get_queue().qsize(),
-        "ws_clients": client_count(),
-        "db": "postgresql",
-    }
+    """Minimal health check for load balancers and uptime monitors."""
+    return {"status": "ok"}

@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libexpat1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
 # Copy requirements file and install dependencies
 COPY requirements.txt .
 RUN pip install --default-timeout=1000 -r requirements.txt
@@ -17,7 +20,10 @@ COPY app/ ./app/
 COPY data/ ./data/
 
 # Create the data folder if it doesn't exist
-RUN mkdir -p data
+RUN mkdir -p data && chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Expose FastAPI port
 EXPOSE 8000

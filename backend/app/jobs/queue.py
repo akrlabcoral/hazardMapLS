@@ -105,7 +105,7 @@ async def run_worker() -> None:
             await broadcast({
                 "type":     "simulation_error",
                 "event_id": event.db_id,
-                "error":    str(exc),
+                "error":    "Simulation processing failed. Please try again.",
             })
 
         finally:

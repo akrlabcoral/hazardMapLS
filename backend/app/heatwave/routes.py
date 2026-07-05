@@ -43,4 +43,5 @@ async def simulate_heatwave(params: HeatwaveInput):
         )
         return result
     except Exception as exc:
-        raise HTTPException(500, str(exc))
+        logging.exception(f"[Heatwave] Simulation failed: {exc}")
+        raise HTTPException(500, "Simulation failed. Please try again later.")

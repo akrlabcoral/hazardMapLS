@@ -17,7 +17,8 @@ packaging==26.2
 psycopg2-binary==2.9.10
 pydantic==2.13.4
 rasterio==1.4.4
-requests>=2.31.0
+requests==2.31.0
+
 scipy==1.15.3
 shapely==2.1.2
 starlette==1.2.0

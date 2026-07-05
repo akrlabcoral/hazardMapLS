@@ -26,10 +26,12 @@ from psycopg2.pool import ThreadedConnectionPool
 # ---------------------------------------------------------------------------
 # Connection pool — created once at module import
 # ---------------------------------------------------------------------------
-_DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://hazardmap:hazardmap_dev@localhost:5432/hazardmap",
-)
+_DATABASE_URL = os.environ.get("DATABASE_URL")
+if not _DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL environment variable is not set. "
+        "Set it to your PostgreSQL connection string before starting the app."
+    )
 
 # min=2 connections always ready, max=10 for burst traffic
 _pool: ThreadedConnectionPool = ThreadedConnectionPool(

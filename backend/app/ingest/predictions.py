@@ -103,7 +103,7 @@ async def _check_heatwave_nationwide(offset: int, target_date: str) -> list[dict
                 c["status"] = "Heatwave"
         
         logger.info(f"[Predictions] offset={offset} state_list_len={len(state_list)} candidates_len={len(candidates)}")
-        logger.info(f"[Predictions] Candidates: {candidates}")
+        # Note: candidate details intentionally omitted from logs to avoid leaking geo/risk data
         
         for d in candidates[:3]:
             place = d.get("state", "Unknown Region")

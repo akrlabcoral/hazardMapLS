@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -30,15 +31,17 @@ from app.ingest.predictions import run_predictions_poller
 from app.jobs.queue import run_worker, get_queue
 
 
+logger = logging.getLogger(__name__)
+
 async def _run_daily_cleanup() -> None:
     """Runs cleanup_old_data() every 24 hours in the background."""
     while True:
-        await asyncio.sleep(24 * 60 * 60)  # wait 24 hours before first run
+        await asyncio.sleep(24 * 60 * 60)
         try:
             await asyncio.to_thread(cleanup_old_data)
-            print("[Cleanup] Daily DB cleanup complete.")
+            logger.info("[Cleanup] Daily DB cleanup complete.")
         except Exception as exc:
-            print(f"[Cleanup] WARNING: DB cleanup failed — {exc}")
+            logger.warning(f"[Cleanup] DB cleanup failed: {type(exc).__name__}")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -51,9 +54,9 @@ _bg_tasks: list[asyncio.Task] = []
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────────────────────
-    print("[Startup] Loading USDA soil rasters...")
+    logger.info("[Startup] Loading USDA soil rasters...")
     load_all_soil_rasters()
-    print("[Startup] Soil raster loading complete.")
+    logger.info("[Startup] Soil raster loading complete.")
 
     queue = get_queue()
 
@@ -65,20 +68,20 @@ async def lifespan(app: FastAPI):
     cleanup_task     = asyncio.create_task(_run_daily_cleanup(),   name="db_cleanup")
     
     _bg_tasks.extend([usgs_poller_task, ncs_poller_task, predictions_task, worker_task, cleanup_task])
-    print("[Startup] USGS poller, NCS poller, simulation worker, and daily cleanup task started.")
+    logger.info("[Startup] USGS poller, NCS poller, simulation worker, and daily cleanup task started.")
 
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────────
-    print("[Shutdown] Cancelling background tasks...")
+    logger.info("[Shutdown] Cancelling background tasks...")
     for task in _bg_tasks:
         task.cancel()
     await asyncio.gather(*_bg_tasks, return_exceptions=True)
 
-    print("[Shutdown] Closing soil raster handles...")
+    logger.info("[Shutdown] Closing soil raster handles...")
     soil_cache.close_all()
 
-    print("[Shutdown] Closing DB connection pool...")
+    logger.info("[Shutdown] Closing DB connection pool...")
     close_pool()
 
 
@@ -88,12 +91,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# In production, set CORS_ALLOWED_ORIGINS env var to your frontend domain(s).
+# Example: CORS_ALLOWED_ORIGINS=https://hazardmap.vercel.app,https://yourdomain.com
+# Falls back to localhost for local development.
+_raw_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+_allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Accept"],
 )
 
 app.include_router(simulate.router, prefix="/api", tags=["Simulate"])

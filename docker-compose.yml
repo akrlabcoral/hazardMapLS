@@ -2,12 +2,14 @@ services:
   db:
     image: postgres:16-alpine
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB:       hazardmap
-      POSTGRES_USER:     hazardmap
-      POSTGRES_PASSWORD: hazardmap_dev
-    ports:
-      - "5432:5432"
+      POSTGRES_DB:   hazardmap
+      POSTGRES_USER: hazardmap
+      # POSTGRES_PASSWORD loaded from .env via env_file
+    # Port 5432 is intentionally NOT exposed to the host.
+    # The backend connects to db:5432 over the internal Docker network.
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,11 +24,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
+    env_file:
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=postgresql://hazardmap:hazardmap_dev@db:5432/hazardmap
     depends_on:
       db:
         condition: service_healthy
@@ -46,9 +47,9 @@ services:
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
+    env_file:
+      - .env
     environment:
-      - VITE_ML_API_URL=http://backend:8000
-      - VITE_SCIENTIFIC_API_URL=http://backend:8000
       - CHOKIDAR_USEPOLLING=true
     depends_on:
       backend:

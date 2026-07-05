@@ -59,9 +59,9 @@ async def simulate_rainfall(params: RainfallInput):
         )
         return result
     except Exception as exc:
-        raise HTTPException(500, str(exc))
+        logging.exception(f"[Landslide] Rainfall simulation failed: {exc}")
+        raise HTTPException(500, "Simulation failed. Please try again later.")
 
-@router.post("/simulate/earthquake")
 async def simulate_earthquake(params: EarthquakeInput):
     if not _NATIONWIDE_GRID:
         raise HTTPException(500, "Nationwide grid not loaded")
@@ -78,9 +78,9 @@ async def simulate_earthquake(params: EarthquakeInput):
         )
         return result
     except Exception as exc:
-        raise HTTPException(500, str(exc))
+        logging.exception(f"[Landslide] Earthquake simulation failed: {exc}")
+        raise HTTPException(500, "Simulation failed. Please try again later.")
 
-@router.post("/simulate/combined")
 async def simulate_combined(params: CombinedInput):
     if not _NATIONWIDE_GRID:
         raise HTTPException(500, "Nationwide grid not loaded")
@@ -101,7 +101,8 @@ async def simulate_combined(params: CombinedInput):
         )
         return result
     except Exception as exc:
-        raise HTTPException(500, str(exc))
+        logging.exception(f"[Landslide] Combined simulation failed: {exc}")
+        raise HTTPException(500, "Simulation failed. Please try again later.")
 
 @router.get("/validation-points")
 async def get_validation_points():
